@@ -6,6 +6,11 @@ def responder_preguntas_negocio(df_ventas, df_logistica):
     print("\n" + "#"*60)
     print(" PARTE 6: 10 PREGUNTAS DE NEGOCIO")
     print("#"*60)
+
+    pedidos_log = df_logistica.groupby("pedido_id").agg(
+        ciudad_destino=("ciudad_destino", "first"),
+        costo_envio=("costo_envio", "first"),
+    ).reset_index()
     
     # 1. ¿Cuál es el canal con mayor venta neta acumulada?
     print("1. Canal con mayor venta neta:", df_ventas.groupby('canal')['valor_neto'].sum().idxmax())
@@ -28,14 +33,16 @@ def responder_preguntas_negocio(df_ventas, df_logistica):
     print(f"\n6. Incidencia más recurrente: {mode_inc}")
     
     # 7. ¿Cuál es el costo total de envío por ciudad destino?
-    print("\n7. Costo total de envío por ciudad destino:\n", df_logistica.groupby('ciudad_destino')['costo_envio'].sum())
+    print("\n7. Costo total de envío por ciudad destino (un costo por pedido):\n",
+      pedidos_log.groupby("ciudad_destino")["costo_envio"].sum())
     
     # 8. ¿Qué porcentaje de los eventos presentan una incidencia registrada?
     pct_inc = (df_logistica['incidencia'].notnull().sum() / len(df_logistica)) * 100
     print(f"\n8. Porcentaje de eventos con incidencia: {pct_inc:.2f}%")
     
     # 9. Top 3 de pedidos con mayor costo logístico acumulado:
-    print("\n9. Top 3 pedidos con mayor costo logístico:\n", df_logistica.groupby('pedido_id')['costo_envio'].sum().nlargest(3))
+    print("\n9. Top 3 pedidos con mayor costo logístico:\n",
+      pedidos_log.nlargest(3, "costo_envio", keep="all")[["pedido_id", "costo_envio"]])
     
     # 10. ¿Cuál es el valor_neto promedio gastado por transacción en cada ciudad?
     print("\n10. Valor neto promedio por transacción según ciudad:\n", df_ventas.groupby('ciudad')['valor_neto'].mean()) 

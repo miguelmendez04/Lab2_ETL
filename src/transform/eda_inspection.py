@@ -1,5 +1,9 @@
 import pandas as pd
 
+def _identificadores(df):
+    return [c for c in df.columns
+            if c.lower().startswith("id_") or c.lower().endswith("_id") or c.lower() == "numero_guia"]
+
 def comprension_inicial(df_ventas, df_logistica):
 
     print("\n" + "#"*60)
@@ -16,10 +20,10 @@ def comprension_inicial(df_ventas, df_logistica):
         print("\n4 y 5. Tipos de datos y registros no nulos:")
         print(df.info())
         
-        ids = [c for c in df.columns if 'id' in c.lower()]
-        fechas = [c for c in df.columns if 'fecha' in c.lower() or 'tiempo' in c.lower()]
-        num = list(df.select_dtypes(include=['number']).columns)
-        cat = list(df.select_dtypes(include=['object', 'category']).columns)
+        ids = _identificadores(df)
+        fechas = [c for c in df.columns if c.lower().startswith("fecha")]
+        num = [c for c in df.select_dtypes(include="number").columns if c not in ids]
+        cat = [c for c in df.columns if c not in ids + fechas + num]
         
         num = [c for c in num if c not in ids]
         cat = [c for c in cat if c not in ids and c not in fechas]
@@ -31,8 +35,11 @@ def comprension_inicial(df_ventas, df_logistica):
         
         for f in fechas:
             try:
-                col_dt = pd.to_datetime(df[f])
+                col_dt = pd.to_datetime(df[f], errors="coerce")
                 print(f"   Rango de fechas en '{f}': {col_dt.min()} a {col_dt.max()}")
+                basura = [c for c in df.columns if c.startswith("Unnamed")]
+                if basura:
+                    print(f"   ATENCIÓN: columnas sin nombre (posible basura del Excel): {basura}")
             except Exception:
                 pass
                 
@@ -68,7 +75,7 @@ def perfil_calidad_datos(df_ventas, df_logistica):
         # 4.3 Duplicados
         tot_dups = df.duplicated().sum()
         print(f"\n--- 4.3 Filas completamente duplicadas: {tot_dups} ---")
-        for id_col in [c for c in df.columns if 'id' in c.lower()]:
+        for id_col in _identificadores(df):
             print(f"    Duplicados en identificador '{id_col}': {df[id_col].duplicated().sum()}")
 
 
@@ -86,6 +93,8 @@ def estadisticos_descriptivos(df_ventas, df_logistica):
     for c in ['ciudad', 'canal', 'categoria']:
         if c in df_ventas.columns:
             print(f"\nVentas por {c}:\n", df_ventas[c].value_counts())
+    print("\nDistribución de cantidad:\n", df_ventas["cantidad"].value_counts().sort_index())
+    print("\nDistribución de calificacion_cliente (no nulos):\n", df_ventas["calificacion_cliente"].value_counts().sort_index())
             
     print("\n--- 5.2 df_logistica ---")
     print("Estadísticas numéricas:")
@@ -93,3 +102,38 @@ def estadisticos_descriptivos(df_ventas, df_logistica):
     for c in ['estado_evento', 'ciudad_destino', 'transportadora', 'incidencia']:
         if c in df_logistica.columns:
             print(f"\nFrecuencia de {c}:\n", df_logistica[c].value_counts())
+
+def revisar_tipos(df_ventas, df_logistica):
+    reglas = {
+        "df_ventas": {
+            "fechas": ["fecha_venta"],
+            "monetarias": ["precio_unitario", "valor_bruto", "valor_descuento", "valor_neto"],
+            "ids_texto": ["pedido_id", "id_cliente", "id_tienda"],
+        },
+        "df_logistica": {
+            "fechas": ["fecha_evento", "fecha_prometida_entrega"],
+            "monetarias": ["costo_envio"],
+            "ids_texto": ["pedido_id", "numero_guia"],
+        },
+    }
+    print("\n" + "#"*60)
+    print(" 4.4 REVISIÓN DE TIPOS DE DATOS")
+    print("#"*60)
+    for nombre, df in [("df_ventas", df_ventas), ("df_logistica", df_logistica)]:
+        r = reglas[nombre]
+        print(f"\n=== {nombre} ===")
+        print(df.dtypes.to_frame("dtype_actual"))
+        for c in r["fechas"]:
+            ok = pd.api.types.is_datetime64_any_dtype(df[c])
+            print(f"  {c}: {'OK' if ok else 'REVISAR: debería ser datetime, llegó como ' + str(df[c].dtype)}")
+        for c in r["monetarias"]:
+            ok = pd.api.types.is_numeric_dtype(df[c])
+            print(f"  {c}: {'OK (numérico)' if ok else 'REVISAR: monto no numérico'}")
+        for c in r["ids_texto"]:
+            ok = not pd.api.types.is_numeric_dtype(df[c])
+            print(f"  {c}: {'OK (texto)' if ok else 'REVISAR: id numérico'}")
+    print("\nOtras columnas a revisar antes de analizar:")
+    print("  - calificacion_cliente: es float por los nulos, pero es una escala 1-5 (mejor Int64 o categoría ordinal).")
+    print("  - descuento_pct: solo 5 valores, se comporta como categoría.")
+    print("  - tiempo_etapa_horas: es una duración numérica, no una fecha.")
+    print("  - Unnamed: 13: columna basura del Excel.")

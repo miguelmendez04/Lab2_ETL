@@ -1,6 +1,6 @@
 from src.extract.extract_db import extraer_ventas_db
 from src.extract.extract_excel import extraer_logistica_excel
-from src.transform.eda_inspection import comprension_inicial, perfil_calidad_datos, estadisticos_descriptivos
+from src.transform.eda_inspection import comprension_inicial, perfil_calidad_datos, estadisticos_descriptivos, revisar_tipos
 from src.transform.business_questions import responder_preguntas_negocio
 from src.transform.transform_medallion import ejecutar_transformacion_medallion
 
@@ -19,6 +19,7 @@ def main():
         
         # PARTE 4: PERFIL DE CALIDAD DEL DATO
         perfil_calidad_datos(df_ventas, df_logistica)
+        revisar_tipos(df_ventas, df_logistica)
         
         # PARTE 5: ESTADÍSTICOS DESCRIPTIVOS
         estadisticos_descriptivos(df_ventas, df_logistica)
