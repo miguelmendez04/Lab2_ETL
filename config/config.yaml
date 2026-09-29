@@ -1,0 +1,28 @@
+# Configuración de la base de datos
+autores:
+  - "Maicol Narvaez"
+  - "Miguel"
+  - "Karin"
+  - "Angie"
+  
+database:
+  table_ventas: "ventas"
+  
+# Configuración de rutas de archivos y medallion
+paths:
+  excel_logistica: "data/kaismart_eventos_logisticos.xlsx"
+  bronze_dir: "data/bronze"
+  silver_dir: "data/silver"
+  gold_dir: "data/gold"
+  log_file: "logs/pipeline.log"
+
+# Reglas e indicadores de negocio
+
+reglas:
+  Cobertura:
+    - "Bogotá"
+    - "Cali"
+    - "Medellín"
+    - "Barranquilla"
+    - "Bucaramanga"
+    - "Pereira"
