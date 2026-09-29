@@ -32,14 +32,15 @@ def comprension_inicial(df_ventas, df_logistica):
         print(f"7. Categorical Variables: {cat}")
         print(f"8. Numeric Variables: {num}")
         print(f"9. Fecha / Tiempo: {fechas}")
-        
+
+        basura = [c for c in df.columns if c.startswith("Unnamed")]
+        if basura:
+            print(f"   ATENCIÓN: columnas sin nombre (posible basura del Excel): {basura}")
+
         for f in fechas:
             try:
                 col_dt = pd.to_datetime(df[f], errors="coerce")
                 print(f"   Rango de fechas en '{f}': {col_dt.min()} a {col_dt.max()}")
-                basura = [c for c in df.columns if c.startswith("Unnamed")]
-                if basura:
-                    print(f"   ATENCIÓN: columnas sin nombre (posible basura del Excel): {basura}")
             except Exception:
                 pass
                 

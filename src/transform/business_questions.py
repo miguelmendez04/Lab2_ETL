@@ -41,8 +41,11 @@ def responder_preguntas_negocio(df_ventas, df_logistica):
     print(f"\n8. Porcentaje de eventos con incidencia: {pct_inc:.2f}%")
     
     # 9. Top 3 de pedidos con mayor costo logístico acumulado:
-    print("\n9. Top 3 pedidos con mayor costo logístico:\n",
-      pedidos_log.nlargest(3, "costo_envio", keep="all")[["pedido_id", "costo_envio"]])
+    costo_max = pedidos_log["costo_envio"].max()
+    n_empate = (pedidos_log["costo_envio"] == costo_max).sum()
+    top3 = pedidos_log.sort_values(["costo_envio", "pedido_id"], ascending=[False, True]).head(3)
+    print(f"\n9. Costo máximo por pedido: {costo_max:,} (empatan {n_empate} pedidos). Primeros 3 por pedido_id:\n",
+           top3[["pedido_id", "costo_envio"]])
     
     # 10. ¿Cuál es el valor_neto promedio gastado por transacción en cada ciudad?
     print("\n10. Valor neto promedio por transacción según ciudad:\n", df_ventas.groupby('ciudad')['valor_neto'].mean()) 
