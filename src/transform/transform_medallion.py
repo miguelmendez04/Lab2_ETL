@@ -93,6 +93,15 @@ def ejecutar_transformacion_medallion(df_ventas_raw, df_logistica_raw, config_pa
         n_incidencias=("incidencia", lambda s: (s != "Sin incidencia").sum()),
     ).reset_index()
     df_gold = df_ventas_transformado.merge(resumen_log, on="pedido_id", how="left", validate="one_to_one")
+    # 3.3 Retraso: fecha real de entrega vs fecha prometida
+    entregas = (df_logisitica_transformado[df_logisitica_transformado["estado_evento"] == "Entregado"]
+                .groupby("pedido_id")["fecha_evento"].max()
+                .rename("fecha_entrega").reset_index())
+    df_gold = df_gold.merge(entregas, on="pedido_id", how="left", validate="one_to_one")
+    df_gold["dias_retraso"] = ((df_gold["fecha_entrega"] - df_gold["fecha_prometida_entrega"])
+                               .dt.total_seconds() / 86400).round(2)
+    df_gold["entregado_tarde"] = (df_gold["dias_retraso"] > 0).astype("boolean").mask(df_gold["dias_retraso"].isna())
+
     df_gold.to_parquet(os.path.join(gold_dir, "ventas_logistica_gold.parquet"), index=False)
     logger.info(f"[GOLD] Eventos: {df_gold_eventos.shape} | Pedidos: {df_gold.shape}")
 
