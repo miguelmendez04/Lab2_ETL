@@ -76,7 +76,3 @@ Flujo: **extraer → Bronze → (EDA y preguntas sobre Bronze) → Silver (leyen
 - Gold: `ventas_logistica_gold` (1 fila por pedido, con montos, costo de envío, retraso, tiempo de ciclo y mes) y `eventos_gold` (1 fila por evento).
   `eventos_gold` no trae los montos de la venta para que no se sumen ~10 veces por pedido. `costo_envio` también se
   repite en cada evento: súmelo solo desde `ventas_logistica_gold`.
-
-## Entrega (.zip)
-
-Incluya `.env` y `data/kaismart_eventos_logisticos.xlsx`, que no están en git. **No incluya `.venv/`**: depende de la máquina donde se creó y se reconstruye con `pip install -r requirements.txt`.
