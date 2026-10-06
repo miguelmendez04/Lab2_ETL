@@ -1,12 +1,10 @@
 import logging
 import os
-import yaml
+from src.utils.config import cargar_config
 
 def setup_logger(config_path="config/config.yaml"):
     if os.path.exists(config_path):
-        with open(config_path, "r", encoding="utf-8") as f:
-            config = yaml.safe_load(f)
-            log_file = config["paths"]["log_file"]
+        log_file = cargar_config(config_path)["paths"]["log_file"]
     else:
         log_file = "logs/pipeline.log"
         

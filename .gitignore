@@ -8,3 +8,6 @@ logs/*
 !logs/.gitkeep
 *.xlsx
 *.pdf
+
+# Excepción: el Excel fuente sí se versiona para que el repo sea ejecutable (las capas se regeneran)
+!data/kaismart_eventos_logisticos.xlsx

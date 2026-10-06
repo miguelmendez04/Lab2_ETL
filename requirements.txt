@@ -1,12 +1,14 @@
-pandas>=2.0.0
-openpyxl>=3.1.0
-sqlalchemy>=2.0.0
-pymysql>=1.0.0
-schedule>=1.2.0
-numpy>=1.24.0
-matplotlib>=3.7.0
-seaborn>=0.12.0
-pyarrow>=12.0.0
-pyyaml>=6.0
-python-dotenv
-openpyxl
+# Probado con Python 3.11.9. Versiones fijas para obtener los mismos resultados en cualquier equipo
+# (el EDA depende del comportamiento de pandas 3, por ejemplo el tipo "str" de las columnas de texto).
+pandas==3.0.6
+numpy==2.4.6          # dependencia de pandas; se fija para que todos usen la misma versión
+pyarrow==25.0.1
+openpyxl==3.1.5
+mysql-connector-python==26.7.0
+python-dotenv==1.2.3
+PyYAML==6.0.3
+schedule==1.2.2
+matplotlib==3.11.2
+seaborn==0.13.2
+Markdown==3.11
+ipykernel==7.4.0

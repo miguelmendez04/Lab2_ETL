@@ -1,0 +1,2889 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laboratorio ETL Kaismart Solutions</title><style>
+body{font-family:Segoe UI,Arial,sans-serif;max-width:980px;margin:2rem auto;padding:0 1rem;line-height:1.55;color:#222}
+h1,h2,h3,h4{color:#1a3a5c}
+table{border-collapse:collapse;width:100%;margin:1rem 0;font-size:.88rem}
+th,td{border:1px solid #ccc;padding:6px 10px;text-align:left;vertical-align:top}
+th{background:#eef3f8}
+code{background:#f3f3f3;padding:1px 4px;border-radius:3px}
+hr{border:none;border-top:1px solid #ddd;margin:2rem 0}
+img{max-width:100%;height:auto;display:block;margin:1.5rem auto;border:1px solid #ddd;border-radius:4px}
+</style></head>
+<body><h1>Laboratorio ETL Kaismart Solutions S.A.S.</h1>
+<p><strong>Autores:</strong> Miguel Ángel Méndez Rodríguez, Maicol Andrés Narváez Rincón, Karin Stephany Parra Rosero, Angie Tatiana Rodríguez Duque</p>
+<p>Fuentes: base MySQL <code>clientes</code>, tabla <code>ventas</code> (<code>df_ventas</code>), y archivo <code>kaismart_eventos_logisticos.xlsx</code> (<code>df_logistica</code>). Las secciones 1 a 4 se calculan sobre los datos originales (capa Bronze), sin limpiar ni integrar.</p>
+<hr />
+<h2>1. Comprensión inicial de los datasets</h2>
+<h3>1.1 Ventas (<code>df_ventas</code>)</h3>
+<p><strong>¿Qué representa una fila?</strong> Una venta (transacción) de un cliente: un pedido_id con un producto, su cantidad, precios, descuento, canal, ciudad, medio de pago y la calificación opcional del cliente.</p>
+<ol>
+<li><strong>Número de registros:</strong> 5.000</li>
+<li><strong>Número de variables:</strong> 17</li>
+<li><strong>Variables:</strong> <code>id_venta</code>, <code>pedido_id</code>, <code>fecha_venta</code>, <code>id_cliente</code>, <code>ciudad</code>, <code>canal</code>, <code>id_tienda</code>, <code>categoria</code>, <code>producto</code>, <code>cantidad</code>, <code>precio_unitario</code>, <code>descuento_pct</code>, <code>valor_bruto</code>, <code>valor_descuento</code>, <code>valor_neto</code>, <code>medio_pago</code>, <code>calificacion_cliente</code></li>
+<li>y 5. <strong>Tipo de dato y registros no nulos:</strong> ver tabla.</li>
+<li><strong>Identificadores:</strong> <code>id_venta</code>, <code>pedido_id</code>, <code>id_cliente</code>, <code>id_tienda</code></li>
+<li><strong>Categóricas:</strong> <code>ciudad</code>, <code>canal</code>, <code>categoria</code>, <code>producto</code>, <code>medio_pago</code>, <code>calificacion_cliente</code></li>
+<li><strong>Numéricas:</strong> <code>cantidad</code>, <code>precio_unitario</code>, <code>descuento_pct</code>, <code>valor_bruto</code>, <code>valor_descuento</code>, <code>valor_neto</code></li>
+<li><strong>Fechas / tiempos:</strong> <code>fecha_venta</code>
+- <strong>Rango de fechas:</strong> <code>fecha_venta</code>: 2026-01-01 a 2026-06-30</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Tipo de dato</th>
+<th>Registros no nulos</th>
+<th>Clasificación</th>
+<th>% nulos</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id_venta</td>
+<td>int64</td>
+<td>5.000</td>
+<td>Identificador</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>pedido_id</td>
+<td>str</td>
+<td>5.000</td>
+<td>Identificador</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>fecha_venta</td>
+<td>datetime64[us]</td>
+<td>5.000</td>
+<td>Fecha</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>id_cliente</td>
+<td>str</td>
+<td>5.000</td>
+<td>Identificador</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>ciudad</td>
+<td>str</td>
+<td>5.000</td>
+<td>Categórica</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>canal</td>
+<td>str</td>
+<td>5.000</td>
+<td>Categórica</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>id_tienda</td>
+<td>str</td>
+<td>1.499</td>
+<td>Identificador</td>
+<td>70,02%</td>
+</tr>
+<tr>
+<td>categoria</td>
+<td>str</td>
+<td>5.000</td>
+<td>Categórica</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>producto</td>
+<td>str</td>
+<td>5.000</td>
+<td>Categórica</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>cantidad</td>
+<td>int64</td>
+<td>5.000</td>
+<td>Numérica</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>precio_unitario</td>
+<td>float64</td>
+<td>5.000</td>
+<td>Numérica</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>descuento_pct</td>
+<td>float64</td>
+<td>5.000</td>
+<td>Numérica</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>valor_bruto</td>
+<td>float64</td>
+<td>5.000</td>
+<td>Numérica</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>valor_descuento</td>
+<td>float64</td>
+<td>5.000</td>
+<td>Numérica</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>valor_neto</td>
+<td>float64</td>
+<td>5.000</td>
+<td>Numérica</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>medio_pago</td>
+<td>str</td>
+<td>5.000</td>
+<td>Categórica</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>calificacion_cliente</td>
+<td>float64</td>
+<td>2.828</td>
+<td>Categórica ordinal</td>
+<td>43,44%</td>
+</tr>
+</tbody>
+</table>
+<h3>1.2 Logística (<code>df_logistica</code>)</h3>
+<p><strong>¿Qué representa una fila?</strong> Un evento u hito del flujo logístico de un pedido (recibido, pago aprobado, alistamiento, despacho, tránsito, entrega...). Cada pedido_id tiene normalmente 10 eventos.</p>
+<ol>
+<li><strong>Número de registros:</strong> 50.000</li>
+<li><strong>Número de variables:</strong> 14</li>
+<li><strong>Variables:</strong> <code>evento_id</code>, <code>pedido_id</code>, <code>fecha_evento</code>, <code>estado_evento</code>, <code>centro_logistico</code>, <code>ciudad_destino</code>, <code>transportadora</code>, <code>numero_guia</code>, <code>fecha_prometida_entrega</code>, <code>tiempo_etapa_horas</code>, <code>costo_envio</code>, <code>incidencia</code>, <code>observacion</code>, <code>Unnamed: 13</code></li>
+<li>y 5. <strong>Tipo de dato y registros no nulos:</strong> ver tabla.</li>
+<li><strong>Identificadores:</strong> <code>evento_id</code>, <code>pedido_id</code>, <code>numero_guia</code></li>
+<li><strong>Categóricas:</strong> <code>estado_evento</code>, <code>centro_logistico</code>, <code>ciudad_destino</code>, <code>transportadora</code>, <code>incidencia</code>, <code>observacion</code></li>
+<li><strong>Numéricas:</strong> <code>tiempo_etapa_horas</code>, <code>costo_envio</code></li>
+<li><strong>Fechas / tiempos:</strong> <code>fecha_evento</code>, <code>fecha_prometida_entrega</code>, <code>tiempo_etapa_horas</code>
+- <strong>Rango de fechas:</strong> <code>fecha_evento</code>: 2026-01-01 a 2026-07-03 | <code>fecha_prometida_entrega</code>: 2026-01-03 a 2026-07-03</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Tipo de dato</th>
+<th>Registros no nulos</th>
+<th>Clasificación</th>
+<th>% nulos</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>evento_id</td>
+<td>int64</td>
+<td>50.000</td>
+<td>Identificador</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>pedido_id</td>
+<td>str</td>
+<td>50.000</td>
+<td>Identificador</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>fecha_evento</td>
+<td>str</td>
+<td>49.935</td>
+<td>Fecha</td>
+<td>0,13%</td>
+</tr>
+<tr>
+<td>estado_evento</td>
+<td>str</td>
+<td>50.000</td>
+<td>Categórica</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>centro_logistico</td>
+<td>str</td>
+<td>49.910</td>
+<td>Categórica</td>
+<td>0,18%</td>
+</tr>
+<tr>
+<td>ciudad_destino</td>
+<td>str</td>
+<td>49.955</td>
+<td>Categórica</td>
+<td>0,09%</td>
+</tr>
+<tr>
+<td>transportadora</td>
+<td>str</td>
+<td>19.912</td>
+<td>Categórica</td>
+<td>60,18%</td>
+</tr>
+<tr>
+<td>numero_guia</td>
+<td>str</td>
+<td>19.932</td>
+<td>Identificador</td>
+<td>60,14%</td>
+</tr>
+<tr>
+<td>fecha_prometida_entrega</td>
+<td>str</td>
+<td>49.945</td>
+<td>Fecha</td>
+<td>0,11%</td>
+</tr>
+<tr>
+<td>tiempo_etapa_horas</td>
+<td>float64</td>
+<td>45.000</td>
+<td>Tiempo (duración numérica)</td>
+<td>10,00%</td>
+</tr>
+<tr>
+<td>costo_envio</td>
+<td>int64</td>
+<td>50.000</td>
+<td>Numérica</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>incidencia</td>
+<td>str</td>
+<td>511</td>
+<td>Categórica</td>
+<td>98,98%</td>
+</tr>
+<tr>
+<td>observacion</td>
+<td>str</td>
+<td>1.723</td>
+<td>Categórica</td>
+<td>96,55%</td>
+</tr>
+<tr>
+<td>Unnamed: 13</td>
+<td>str</td>
+<td>1</td>
+<td>Columna residual</td>
+<td>100,00%</td>
+</tr>
+</tbody>
+</table>
+<h3>1.3 Otros aspectos de calidad del dato</h3>
+<table>
+<thead>
+<tr>
+<th>Chequeo</th>
+<th>Resultado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>valor_bruto = precio_unitario × cantidad</td>
+<td>5.000 de 5.000 cumplen (0 inconsistentes)</td>
+</tr>
+<tr>
+<td>valor_descuento = valor_bruto × descuento_pct / 100</td>
+<td>5.000 de 5.000 cumplen (0 inconsistentes)</td>
+</tr>
+<tr>
+<td>valor_neto = valor_bruto − valor_descuento</td>
+<td>5.000 de 5.000 cumplen (0 inconsistentes)</td>
+</tr>
+<tr>
+<td>Valores negativos en variables numéricas</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Integridad referencial por pedido_id</td>
+<td>0 ventas sin eventos logísticos; 0 pedidos logísticos sin venta</td>
+</tr>
+<tr>
+<td>Ciudad de la venta vs ciudad_destino logística</td>
+<td>0 pedidos con ciudad distinta</td>
+</tr>
+<tr>
+<td>Eventos por pedido</td>
+<td>mín 8, máx 12, moda 10</td>
+</tr>
+<tr>
+<td>Pedidos que no pasan por los 10 estados</td>
+<td>98 pedidos con trazabilidad incompleta</td>
+</tr>
+<tr>
+<td>costo_envio constante dentro de cada pedido</td>
+<td>5.000 de 5.000 pedidos (se repite en cada evento: no sumar por evento)</td>
+</tr>
+<tr>
+<td>numero_guia compartido por pedidos distintos</td>
+<td>1: KMS64861259</td>
+</tr>
+<tr>
+<td>Fechas de logística almacenadas como texto</td>
+<td>fecha_evento y fecha_prometida_entrega son str; 0 valores no convertibles a fecha</td>
+</tr>
+<tr>
+<td>Columna residual del Excel</td>
+<td>Unnamed: 13, con un único valor: ['=AI("")']</td>
+</tr>
+<tr>
+<td>Eventos con fecha anterior a la venta</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Pedidos con fecha prometida igual o anterior a la venta</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Pedidos con eventos fuera de orden cronológico (según evento_id)</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Primer evento de cada pedido</td>
+<td>Pedido recibido: 4.991, Pago aprobado: 9</td>
+</tr>
+</tbody>
+</table>
+<h2>2. Perfil inicial de calidad del dato</h2>
+<h3>2.1 Valores nulos</h3>
+<h4>Nulos en <code>df_ventas</code> (de mayor a menor)</h4>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Cantidad nulos</th>
+<th>Porcentaje (%)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id_tienda</td>
+<td>3.501</td>
+<td>70,02%</td>
+</tr>
+<tr>
+<td>calificacion_cliente</td>
+<td>2.172</td>
+<td>43,44%</td>
+</tr>
+<tr>
+<td>canal</td>
+<td>0</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>cantidad</td>
+<td>0</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>categoria</td>
+<td>0</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>ciudad</td>
+<td>0</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>descuento_pct</td>
+<td>0</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>fecha_venta</td>
+<td>0</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>id_cliente</td>
+<td>0</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>id_venta</td>
+<td>0</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>medio_pago</td>
+<td>0</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>pedido_id</td>
+<td>0</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>precio_unitario</td>
+<td>0</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>producto</td>
+<td>0</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>valor_bruto</td>
+<td>0</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>valor_descuento</td>
+<td>0</td>
+<td>0,00%</td>
+</tr>
+<tr>
+<td>valor_neto</td>
+<td>0</td>
+<td>0,00%</td>
+</tr>
+</tbody>
+</table>
+<h4>Nulos en <code>df_logistica</code> (de mayor a menor)</h4>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Cantidad nulos</th>
+<th>Porcentaje (%)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Unnamed: 13</td>
+<td>49.999</td>
+<td>99,998%</td>
+</tr>
+<tr>
+<td>incidencia</td>
+<td>49.489</td>
+<td>98,978%</td>
+</tr>
+<tr>
+<td>observacion</td>
+<td>48.277</td>
+<td>96,554%</td>
+</tr>
+<tr>
+<td>transportadora</td>
+<td>30.088</td>
+<td>60,176%</td>
+</tr>
+<tr>
+<td>numero_guia</td>
+<td>30.068</td>
+<td>60,136%</td>
+</tr>
+<tr>
+<td>tiempo_etapa_horas</td>
+<td>5.000</td>
+<td>10,000%</td>
+</tr>
+<tr>
+<td>centro_logistico</td>
+<td>90</td>
+<td>0,180%</td>
+</tr>
+<tr>
+<td>fecha_evento</td>
+<td>65</td>
+<td>0,130%</td>
+</tr>
+<tr>
+<td>fecha_prometida_entrega</td>
+<td>55</td>
+<td>0,110%</td>
+</tr>
+<tr>
+<td>ciudad_destino</td>
+<td>45</td>
+<td>0,090%</td>
+</tr>
+<tr>
+<td>costo_envio</td>
+<td>0</td>
+<td>0,000%</td>
+</tr>
+<tr>
+<td>estado_evento</td>
+<td>0</td>
+<td>0,000%</td>
+</tr>
+<tr>
+<td>evento_id</td>
+<td>0</td>
+<td>0,000%</td>
+</tr>
+<tr>
+<td>pedido_id</td>
+<td>0</td>
+<td>0,000%</td>
+</tr>
+</tbody>
+</table>
+<h4>Interpretación: nulos normales del proceso vs. problemas de calidad</h4>
+<table>
+<thead>
+<tr>
+<th>DataFrame</th>
+<th>Variable</th>
+<th>Tipo de nulo</th>
+<th>Interpretación</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>df_ventas</td>
+<td>id_tienda</td>
+<td>Normal</td>
+<td>Es nulo en 3.501 de 3.501 ventas web/app y en 0 de 1.499 ventas en tienda física: solo aplica a tienda física.</td>
+</tr>
+<tr>
+<td>df_ventas</td>
+<td>calificacion_cliente</td>
+<td>Normal</td>
+<td>Calificar es opcional para el cliente. Debe tenerse en cuenta que los promedios solo representan a quien calificó.</td>
+</tr>
+<tr>
+<td>df_logistica</td>
+<td>transportadora / numero_guia</td>
+<td>Normal antes del despacho</td>
+<td>Nulos antes del despacho: 30.008 / 30.008 (el 100% de esos eventos): aún no hay transporte asignado.</td>
+</tr>
+<tr>
+<td>df_logistica</td>
+<td>transportadora / numero_guia</td>
+<td>Problema</td>
+<td>Nulos en estados de transporte (Despachado en adelante): 80 / 60. Un pedido despachado debe tener transportadora y guía.</td>
+</tr>
+<tr>
+<td>df_logistica</td>
+<td>tiempo_etapa_horas</td>
+<td>Normal</td>
+<td>Los 5.000 nulos están en: Pedido recibido (5.000). Es el primer evento y no tiene etapa previa.</td>
+</tr>
+<tr>
+<td>df_logistica</td>
+<td>incidencia</td>
+<td>Normal</td>
+<td>Solo se registra cuando hay una novedad.</td>
+</tr>
+<tr>
+<td>df_logistica</td>
+<td>observacion</td>
+<td>Normal</td>
+<td>Solo se registra cuando hay algo que anotar (1.212 observaciones existen sin incidencia).</td>
+</tr>
+<tr>
+<td>df_logistica</td>
+<td>centro_logistico, ciudad_destino, fecha_prometida_entrega</td>
+<td>Problema</td>
+<td>Son datos del pedido y deben existir en todos sus eventos (son constantes dentro del pedido).</td>
+</tr>
+<tr>
+<td>df_logistica</td>
+<td>fecha_evento</td>
+<td>Problema</td>
+<td>Todo evento ocurrido debe tener fecha y hora.</td>
+</tr>
+<tr>
+<td>df_logistica</td>
+<td>Unnamed: 13</td>
+<td>Problema (columna residual)</td>
+<td>49.999 nulos de 50.000: columna sin nombre que no pertenece al modelo de datos.</td>
+</tr>
+</tbody>
+</table>
+<p>En esta etapa no se elimina ni se imputa ningún valor.</p>
+<h3>2.2 Valores únicos y cardinalidad (<code>nunique()</code>)</h3>
+<h4>Cardinalidad en <code>df_ventas</code></h4>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Clasificación</th>
+<th>Valores únicos</th>
+<th>% sobre registros</th>
+<th>Evaluación</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id_venta</td>
+<td>Identificador</td>
+<td>5.000</td>
+<td>100,00%</td>
+<td>Identificador único</td>
+</tr>
+<tr>
+<td>pedido_id</td>
+<td>Identificador</td>
+<td>5.000</td>
+<td>100,00%</td>
+<td>Identificador único</td>
+</tr>
+<tr>
+<td>fecha_venta</td>
+<td>Fecha</td>
+<td>5.000</td>
+<td>100,00%</td>
+<td>Fecha (casi única por registro)</td>
+</tr>
+<tr>
+<td>id_cliente</td>
+<td>Identificador</td>
+<td>2.292</td>
+<td>45,84%</td>
+<td>Identificador con repetidos (alta cardinalidad)</td>
+</tr>
+<tr>
+<td>valor_neto</td>
+<td>Numérica</td>
+<td>1.325</td>
+<td>26,50%</td>
+<td>Numérica continua</td>
+</tr>
+<tr>
+<td>valor_descuento</td>
+<td>Numérica</td>
+<td>693</td>
+<td>13,86%</td>
+<td>Numérica continua</td>
+</tr>
+<tr>
+<td>valor_bruto</td>
+<td>Numérica</td>
+<td>448</td>
+<td>8,96%</td>
+<td>Numérica continua</td>
+</tr>
+<tr>
+<td>precio_unitario</td>
+<td>Numérica</td>
+<td>133</td>
+<td>2,66%</td>
+<td>Numérica continua</td>
+</tr>
+<tr>
+<td>producto</td>
+<td>Categórica</td>
+<td>30</td>
+<td>0,60%</td>
+<td>Cardinalidad media</td>
+</tr>
+<tr>
+<td>id_tienda</td>
+<td>Identificador</td>
+<td>10</td>
+<td>0,20%</td>
+<td>Clave que se repite (~149,9 filas por valor)</td>
+</tr>
+<tr>
+<td>medio_pago</td>
+<td>Categórica</td>
+<td>6</td>
+<td>0,12%</td>
+<td>Baja cardinalidad (pocos valores posibles)</td>
+</tr>
+<tr>
+<td>ciudad</td>
+<td>Categórica</td>
+<td>6</td>
+<td>0,12%</td>
+<td>Baja cardinalidad (pocos valores posibles)</td>
+</tr>
+<tr>
+<td>categoria</td>
+<td>Categórica</td>
+<td>5</td>
+<td>0,10%</td>
+<td>Baja cardinalidad (pocos valores posibles)</td>
+</tr>
+<tr>
+<td>calificacion_cliente</td>
+<td>Categórica ordinal</td>
+<td>5</td>
+<td>0,10%</td>
+<td>Baja cardinalidad (pocos valores posibles)</td>
+</tr>
+<tr>
+<td>descuento_pct</td>
+<td>Numérica</td>
+<td>5</td>
+<td>0,10%</td>
+<td>Numérica discreta (pocos valores)</td>
+</tr>
+<tr>
+<td>cantidad</td>
+<td>Numérica</td>
+<td>4</td>
+<td>0,08%</td>
+<td>Numérica discreta (pocos valores)</td>
+</tr>
+<tr>
+<td>canal</td>
+<td>Categórica</td>
+<td>3</td>
+<td>0,06%</td>
+<td>Baja cardinalidad (pocos valores posibles)</td>
+</tr>
+</tbody>
+</table>
+<h4>Cardinalidad en <code>df_logistica</code></h4>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Clasificación</th>
+<th>Valores únicos</th>
+<th>% sobre registros</th>
+<th>Evaluación</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>evento_id</td>
+<td>Identificador</td>
+<td>49.900</td>
+<td>99,80%</td>
+<td>Identificador con repetidos (alta cardinalidad)</td>
+</tr>
+<tr>
+<td>fecha_evento</td>
+<td>Fecha</td>
+<td>49.765</td>
+<td>99,53%</td>
+<td>Fecha (casi única por registro)</td>
+</tr>
+<tr>
+<td>pedido_id</td>
+<td>Identificador</td>
+<td>5.000</td>
+<td>10,00%</td>
+<td>Clave que se repite (~10,0 filas por valor)</td>
+</tr>
+<tr>
+<td>numero_guia</td>
+<td>Identificador</td>
+<td>4.999</td>
+<td>10,00%</td>
+<td>Clave que se repite (~4,0 filas por valor)</td>
+</tr>
+<tr>
+<td>fecha_prometida_entrega</td>
+<td>Fecha</td>
+<td>4.999</td>
+<td>10,00%</td>
+<td>Fecha que se repite</td>
+</tr>
+<tr>
+<td>tiempo_etapa_horas</td>
+<td>Tiempo (duración numérica)</td>
+<td>1.748</td>
+<td>3,50%</td>
+<td>Numérica continua</td>
+</tr>
+<tr>
+<td>costo_envio</td>
+<td>Numérica</td>
+<td>12</td>
+<td>0,02%</td>
+<td>Numérica discreta (pocos valores)</td>
+</tr>
+<tr>
+<td>estado_evento</td>
+<td>Categórica</td>
+<td>10</td>
+<td>0,02%</td>
+<td>Baja cardinalidad (pocos valores posibles)</td>
+</tr>
+<tr>
+<td>observacion</td>
+<td>Categórica</td>
+<td>9</td>
+<td>0,02%</td>
+<td>Baja cardinalidad (pocos valores posibles)</td>
+</tr>
+<tr>
+<td>centro_logistico</td>
+<td>Categórica</td>
+<td>6</td>
+<td>0,01%</td>
+<td>Baja cardinalidad (pocos valores posibles)</td>
+</tr>
+<tr>
+<td>ciudad_destino</td>
+<td>Categórica</td>
+<td>6</td>
+<td>0,01%</td>
+<td>Baja cardinalidad (pocos valores posibles)</td>
+</tr>
+<tr>
+<td>incidencia</td>
+<td>Categórica</td>
+<td>6</td>
+<td>0,01%</td>
+<td>Baja cardinalidad (pocos valores posibles)</td>
+</tr>
+<tr>
+<td>transportadora</td>
+<td>Categórica</td>
+<td>5</td>
+<td>0,01%</td>
+<td>Baja cardinalidad (pocos valores posibles)</td>
+</tr>
+<tr>
+<td>Unnamed: 13</td>
+<td>Columna residual</td>
+<td>1</td>
+<td>0,00%</td>
+<td>Sin información útil</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong><code>id_venta</code>:</strong> 5.000 valores para 5.000 filas. Es el identificador único de la venta.</li>
+<li><strong><code>pedido_id</code>:</strong> único en ventas (5.000), pero en logística se repite (~10 eventos por pedido). Es la clave para integrar las fuentes (relación 1 a muchos).</li>
+<li><strong><code>evento_id</code>:</strong> 49.900 valores para 50.000 filas. Debería ser único, así que hay 100 repetidos (ver 2.3).</li>
+<li><strong>Alta cardinalidad:</strong> <code>id_cliente</code> (2.292 clientes; hay clientes que compran varias veces). <code>producto</code> (30 valores) tiene cardinalidad media.</li>
+<li><strong>Baja cardinalidad (pocos valores posibles):</strong> <code>canal</code>, <code>ciudad</code>, <code>categoria</code>, <code>medio_pago</code>, <code>calificacion_cliente</code>, <code>estado_evento</code>, <code>centro_logistico</code>, <code>ciudad_destino</code>, <code>transportadora</code>, <code>incidencia</code> y <code>observacion</code>. Son ideales para agrupar.</li>
+<li><strong>Numéricas discretas:</strong> <code>cantidad</code> (4 valores), <code>descuento_pct</code> (5) y <code>costo_envio</code> (12 tarifas) toman pocos valores.</li>
+</ul>
+<h3>2.3 Duplicados</h3>
+<table>
+<thead>
+<tr>
+<th>Revisión</th>
+<th>df_ventas</th>
+<th>df_logistica</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Filas completamente duplicadas</td>
+<td>0</td>
+<td>99</td>
+</tr>
+<tr>
+<td><code>id_venta</code> repetidos</td>
+<td>0</td>
+<td>-</td>
+</tr>
+<tr>
+<td><code>pedido_id</code> repetidos</td>
+<td>0</td>
+<td>45.000 (esperado: varios eventos por pedido)</td>
+</tr>
+<tr>
+<td><code>evento_id</code> repetidos</td>
+<td>-</td>
+<td>100</td>
+</tr>
+<tr>
+<td><code>numero_guia</code> compartido por pedidos distintos</td>
+<td>-</td>
+<td>1 (<code>KMS64861259</code>)</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Ventas:</strong> no hay duplicados. Cada venta es un pedido único (relación 1 a 1 entre <code>id_venta</code> y <code>pedido_id</code>).</li>
+<li><strong>Logística:</strong> de los 100 <code>evento_id</code> repetidos, 99 son filas idénticas (el mismo evento cargado dos veces) y 1 tiene contenido distinto: <code>evento_id</code> 35782 difiere solo en <code>centro_logistico</code>. Se conservará la fila más completa.</li>
+<li><strong>Guía compartida:</strong> <code>KMS64861259</code> aparece en los pedidos <code>PED002818</code>, <code>PED003984</code>. Una guía debería identificar a un solo envío.</li>
+<li>No se elimina ningún duplicado en esta etapa.</li>
+</ul>
+<h3>2.4 Coherencia de tipos de datos</h3>
+<h4>Tipos en <code>df_ventas</code></h4>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Tipo detectado</th>
+<th>Diagnóstico</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id_venta</td>
+<td>int64</td>
+<td>OK: clave técnica entera (no se opera aritméticamente)</td>
+</tr>
+<tr>
+<td>pedido_id</td>
+<td>str</td>
+<td>OK (texto)</td>
+</tr>
+<tr>
+<td>fecha_venta</td>
+<td>datetime64[us]</td>
+<td>OK (datetime)</td>
+</tr>
+<tr>
+<td>id_cliente</td>
+<td>str</td>
+<td>OK (texto)</td>
+</tr>
+<tr>
+<td>ciudad</td>
+<td>str</td>
+<td>OK (texto)</td>
+</tr>
+<tr>
+<td>canal</td>
+<td>str</td>
+<td>OK (texto)</td>
+</tr>
+<tr>
+<td>id_tienda</td>
+<td>str</td>
+<td>OK (texto)</td>
+</tr>
+<tr>
+<td>categoria</td>
+<td>str</td>
+<td>OK (texto)</td>
+</tr>
+<tr>
+<td>producto</td>
+<td>str</td>
+<td>OK (texto)</td>
+</tr>
+<tr>
+<td>cantidad</td>
+<td>int64</td>
+<td>OK (numérica)</td>
+</tr>
+<tr>
+<td>precio_unitario</td>
+<td>float64</td>
+<td>OK (monetaria numérica)</td>
+</tr>
+<tr>
+<td>descuento_pct</td>
+<td>float64</td>
+<td>OK (numérica)</td>
+</tr>
+<tr>
+<td>valor_bruto</td>
+<td>float64</td>
+<td>OK (monetaria numérica)</td>
+</tr>
+<tr>
+<td>valor_descuento</td>
+<td>float64</td>
+<td>OK (monetaria numérica)</td>
+</tr>
+<tr>
+<td>valor_neto</td>
+<td>float64</td>
+<td>OK (monetaria numérica)</td>
+</tr>
+<tr>
+<td>medio_pago</td>
+<td>str</td>
+<td>OK (texto)</td>
+</tr>
+<tr>
+<td>calificacion_cliente</td>
+<td>float64</td>
+<td>REVISAR: escala entera 1-5 almacenada como float64 por los nulos; usar Int64</td>
+</tr>
+</tbody>
+</table>
+<h4>Tipos en <code>df_logistica</code></h4>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Tipo detectado</th>
+<th>Diagnóstico</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>evento_id</td>
+<td>int64</td>
+<td>OK: clave técnica entera (no se opera aritméticamente)</td>
+</tr>
+<tr>
+<td>pedido_id</td>
+<td>str</td>
+<td>OK (texto)</td>
+</tr>
+<tr>
+<td>fecha_evento</td>
+<td>str</td>
+<td>REVISAR: fecha almacenada como str, convertir a datetime</td>
+</tr>
+<tr>
+<td>estado_evento</td>
+<td>str</td>
+<td>OK (texto)</td>
+</tr>
+<tr>
+<td>centro_logistico</td>
+<td>str</td>
+<td>OK (texto)</td>
+</tr>
+<tr>
+<td>ciudad_destino</td>
+<td>str</td>
+<td>OK (texto)</td>
+</tr>
+<tr>
+<td>transportadora</td>
+<td>str</td>
+<td>OK (texto)</td>
+</tr>
+<tr>
+<td>numero_guia</td>
+<td>str</td>
+<td>OK (texto)</td>
+</tr>
+<tr>
+<td>fecha_prometida_entrega</td>
+<td>str</td>
+<td>REVISAR: fecha almacenada como str, convertir a datetime</td>
+</tr>
+<tr>
+<td>tiempo_etapa_horas</td>
+<td>float64</td>
+<td>OK: duración en horas (numérica), no es una fecha</td>
+</tr>
+<tr>
+<td>costo_envio</td>
+<td>int64</td>
+<td>OK (monetaria numérica)</td>
+</tr>
+<tr>
+<td>incidencia</td>
+<td>str</td>
+<td>OK (texto)</td>
+</tr>
+<tr>
+<td>observacion</td>
+<td>str</td>
+<td>OK (texto)</td>
+</tr>
+<tr>
+<td>Unnamed: 13</td>
+<td>str</td>
+<td>REVISAR: eliminar (no pertenece al modelo de datos)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Columnas a revisar antes de analizar:</strong> <code>fecha_evento</code> y <code>fecha_prometida_entrega</code> (texto, se deben convertir a datetime), <code>calificacion_cliente</code> (float por los nulos, es una escala entera), <code>Unnamed: 13</code> (residual), y <code>costo_envio</code>, que se repite en cada evento del pedido y no debe sumarse por evento. Los montos son numéricos y los identificadores de texto son coherentes; <code>id_venta</code> y <code>evento_id</code> son claves técnicas enteras, así que no se opera con ellas.</p>
+<h2>3. Estadísticos descriptivos y resúmenes</h2>
+<h3>3.1 Variables numéricas</h3>
+<h4><code>df_ventas</code></h4>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Count</th>
+<th>Media</th>
+<th>Std</th>
+<th>Min</th>
+<th>P25</th>
+<th>Mediana</th>
+<th>P75</th>
+<th>Max</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>cantidad</td>
+<td>5.000</td>
+<td>1,46</td>
+<td>0,74</td>
+<td>1,00</td>
+<td>1,00</td>
+<td>1,00</td>
+<td>2,00</td>
+<td>4,00</td>
+</tr>
+<tr>
+<td>precio_unitario</td>
+<td>5.000</td>
+<td>455.950,16</td>
+<td>445.808,47</td>
+<td>75.900,00</td>
+<td>142.400,00</td>
+<td>289.900,00</td>
+<td>685.900,00</td>
+<td>2.309.900,00</td>
+</tr>
+<tr>
+<td>descuento_pct</td>
+<td>5.000</td>
+<td>5,28</td>
+<td>6,12</td>
+<td>0,00</td>
+<td>0,00</td>
+<td>5,00</td>
+<td>10,00</td>
+<td>20,00</td>
+</tr>
+<tr>
+<td>valor_bruto</td>
+<td>5.000</td>
+<td>668.288,12</td>
+<td>828.903,83</td>
+<td>75.900,00</td>
+<td>188.800,00</td>
+<td>391.800,00</td>
+<td>807.400,00</td>
+<td>8.799.600,00</td>
+</tr>
+<tr>
+<td>valor_descuento</td>
+<td>5.000</td>
+<td>34.593,10</td>
+<td>79.018,31</td>
+<td>0,00</td>
+<td>0,00</td>
+<td>5.495,00</td>
+<td>35.970,00</td>
+<td>1.671.920,00</td>
+</tr>
+<tr>
+<td>valor_neto</td>
+<td>5.000</td>
+<td>633.695,02</td>
+<td>788.075,29</td>
+<td>63.920,00</td>
+<td>176.310,00</td>
+<td>367.110,00</td>
+<td>764.915,00</td>
+<td>8.799.600,00</td>
+</tr>
+</tbody>
+</table>
+<p>Los montos tienen asimetría positiva: la media de <code>valor_neto</code> (633.695) casi duplica la mediana (367.110), porque pocas ventas de valor alto elevan el promedio. Para este tipo de variable, la mediana es la medida central más representativa.</p>
+<p><img alt="Distribución de precios y valor neto" src="img/dist_precios_neto.png" /></p>
+<h4><code>df_logistica</code></h4>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Count</th>
+<th>Media</th>
+<th>Std</th>
+<th>Min</th>
+<th>P25</th>
+<th>Mediana</th>
+<th>P75</th>
+<th>Max</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>tiempo_etapa_horas</td>
+<td>45.000</td>
+<td>4,00</td>
+<td>3,46</td>
+<td>0,08</td>
+<td>1,25</td>
+<td>3,05</td>
+<td>5,89</td>
+<td>24,69</td>
+</tr>
+<tr>
+<td>costo_envio</td>
+<td>50.000</td>
+<td>13.609,49</td>
+<td>3.607,86</td>
+<td>8.900,00</td>
+<td>9.900,00</td>
+<td>13.900,00</td>
+<td>15.900,00</td>
+<td>20.790,00</td>
+</tr>
+</tbody>
+</table>
+<p><code>costo_envio</code> está calculado por evento. Por pedido (un valor por pedido) la media es 13.611.</p>
+<p><img alt="Diagrama de caja tiempo por etapa" src="img/dist_tiempo_etapa.png" /></p>
+<h3>3.2 Variables categóricas</h3>
+<h4>Resumen general</h4>
+<table>
+<thead>
+<tr>
+<th>DataFrame</th>
+<th>Variable</th>
+<th>Valores únicos</th>
+<th>Categoría más frecuente</th>
+<th>Frecuencia</th>
+<th>% de no nulos</th>
+<th>Categorías</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>df_ventas</td>
+<td>ciudad</td>
+<td>6</td>
+<td>Bogotá D.C.</td>
+<td>1.653</td>
+<td>33,1%</td>
+<td>Bogotá D.C., Cali, Medellín, Barranquilla, Bucaramanga, Pereira</td>
+</tr>
+<tr>
+<td>df_ventas</td>
+<td>canal</td>
+<td>3</td>
+<td>Página web</td>
+<td>2.020</td>
+<td>40,4%</td>
+<td>Página web, Tienda física, Aplicación móvil</td>
+</tr>
+<tr>
+<td>df_ventas</td>
+<td>categoria</td>
+<td>5</td>
+<td>Tecnología</td>
+<td>1.366</td>
+<td>27,3%</td>
+<td>Tecnología, Electrodomésticos, Hogar, Deportes, Oficina</td>
+</tr>
+<tr>
+<td>df_ventas</td>
+<td>producto</td>
+<td>30</td>
+<td>Monitor 24 pulgadas</td>
+<td>243</td>
+<td>4,9%</td>
+<td>Monitor 24 pulgadas, Audífonos Bluetooth, Smartwatch, Mouse inalámbrico, Teclado mecánico, Tablet 10 pulgadas, Cafetera eléctrica, Freidora de aire, Arrocera, Horno microondas, Licuadora, Lámpara de mesa, Sanduchera, Aspiradora vertical, Purificador de aire, Juego de ollas, Kit bandas elásticas, Organizador modular, Ventilador de torre, Impresora multifuncional, Archivador metálico, Banda caminadora, Base para portátil, Mancuernas ajustables, Bicicleta estática, Balón fútbol, Colchoneta yoga, Silla ergonómica, Escritorio ajustable, Webcam Full HD</td>
+</tr>
+<tr>
+<td>df_ventas</td>
+<td>medio_pago</td>
+<td>6</td>
+<td>Tarjeta crédito</td>
+<td>1.888</td>
+<td>37,8%</td>
+<td>Tarjeta crédito, PSE, Tarjeta débito, Efectivo, Billetera digital, Transferencia</td>
+</tr>
+<tr>
+<td>df_ventas</td>
+<td>calificacion_cliente</td>
+<td>5</td>
+<td>5.0</td>
+<td>1.198</td>
+<td>42,4%</td>
+<td>5.0, 4.0, 3.0, 2.0, 1.0</td>
+</tr>
+<tr>
+<td>df_logistica</td>
+<td>estado_evento</td>
+<td>10</td>
+<td>Listo para despacho</td>
+<td>5.006</td>
+<td>10,0%</td>
+<td>Listo para despacho, Despachado, Orden enviada a logística, En alistamiento, Pedido recibido, Pago aprobado, Empacado, En tránsito, Entregado, En ruta de entrega</td>
+</tr>
+<tr>
+<td>df_logistica</td>
+<td>centro_logistico</td>
+<td>6</td>
+<td>CEDI Bogotá</td>
+<td>16.491</td>
+<td>33,0%</td>
+<td>CEDI Bogotá, CEDI Cali, CEDI Medellín, CEDI Barranquilla, CEDI Bucaramanga, CEDI Pereira</td>
+</tr>
+<tr>
+<td>df_logistica</td>
+<td>ciudad_destino</td>
+<td>6</td>
+<td>Bogotá D.C.</td>
+<td>16.510</td>
+<td>33,0%</td>
+<td>Bogotá D.C., Cali, Medellín, Barranquilla, Bucaramanga, Pereira</td>
+</tr>
+<tr>
+<td>df_logistica</td>
+<td>transportadora</td>
+<td>5</td>
+<td>Envia</td>
+<td>4.216</td>
+<td>21,2%</td>
+<td>Envia, Coordinadora, Inter Rapidísimo, TCC, Servientrega</td>
+</tr>
+<tr>
+<td>df_logistica</td>
+<td>incidencia</td>
+<td>6</td>
+<td>Error de clasificación</td>
+<td>98</td>
+<td>19,2%</td>
+<td>Error de clasificación, Cliente ausente, Novedad climática, Retraso por tráfico, Paquete reprogramado, Dirección incompleta</td>
+</tr>
+<tr>
+<td>df_logistica</td>
+<td>observacion</td>
+<td>9</td>
+<td>Validación realizada sin novedades.</td>
+<td>412</td>
+<td>23,9%</td>
+<td>Validación realizada sin novedades., Seguimiento automático registrado por el sistema., Pedido procesado dentro de la ventana prevista., El paquete fue redireccionado al centro logístico correcto., Se programó un nuevo intento de entrega., La operación se retrasó por condiciones climáticas., La ruta presentó congestión superior a la esperada., El cliente solicitó cambio de fecha de entrega., Se solicitó validación de dirección al cliente.</td>
+</tr>
+</tbody>
+</table>
+<h4><code>df_ventas</code>: ventas por ciudad</h4>
+<table>
+<thead>
+<tr>
+<th>ciudad</th>
+<th>registros</th>
+<th>%</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Bogotá D.C.</td>
+<td>1.653</td>
+<td>33,1%</td>
+</tr>
+<tr>
+<td>Cali</td>
+<td>942</td>
+<td>18,8%</td>
+</tr>
+<tr>
+<td>Medellín</td>
+<td>919</td>
+<td>18,4%</td>
+</tr>
+<tr>
+<td>Barranquilla</td>
+<td>534</td>
+<td>10,7%</td>
+</tr>
+<tr>
+<td>Bucaramanga</td>
+<td>513</td>
+<td>10,3%</td>
+</tr>
+<tr>
+<td>Pereira</td>
+<td>439</td>
+<td>8,8%</td>
+</tr>
+</tbody>
+</table>
+<h4><code>df_ventas</code>: ventas por canal</h4>
+<table>
+<thead>
+<tr>
+<th>canal</th>
+<th>registros</th>
+<th>%</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Página web</td>
+<td>2.020</td>
+<td>40,4%</td>
+</tr>
+<tr>
+<td>Tienda física</td>
+<td>1.499</td>
+<td>30,0%</td>
+</tr>
+<tr>
+<td>Aplicación móvil</td>
+<td>1.481</td>
+<td>29,6%</td>
+</tr>
+</tbody>
+</table>
+<h4><code>df_ventas</code>: ventas por categoría</h4>
+<table>
+<thead>
+<tr>
+<th>categoria</th>
+<th>registros</th>
+<th>%</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tecnología</td>
+<td>1.366</td>
+<td>27,3%</td>
+</tr>
+<tr>
+<td>Electrodomésticos</td>
+<td>1.104</td>
+<td>22,1%</td>
+</tr>
+<tr>
+<td>Hogar</td>
+<td>935</td>
+<td>18,7%</td>
+</tr>
+<tr>
+<td>Deportes</td>
+<td>812</td>
+<td>16,2%</td>
+</tr>
+<tr>
+<td>Oficina</td>
+<td>783</td>
+<td>15,7%</td>
+</tr>
+</tbody>
+</table>
+<h4><code>df_ventas</code>: distribución de la cantidad de productos vendidos</h4>
+<table>
+<thead>
+<tr>
+<th>cantidad</th>
+<th>registros</th>
+<th>%</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>3.354</td>
+<td>67,1%</td>
+</tr>
+<tr>
+<td>2</td>
+<td>1.139</td>
+<td>22,8%</td>
+</tr>
+<tr>
+<td>3</td>
+<td>379</td>
+<td>7,6%</td>
+</tr>
+<tr>
+<td>4</td>
+<td>128</td>
+<td>2,6%</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="Distribución de cantidad" src="img/dist_cantidad.png" /></p>
+<h4><code>df_ventas</code>: resumen de <code>precio_unitario</code>, <code>valor_bruto</code>, <code>valor_descuento</code> y <code>valor_neto</code></h4>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Count</th>
+<th>Media</th>
+<th>Std</th>
+<th>Min</th>
+<th>P25</th>
+<th>Mediana</th>
+<th>P75</th>
+<th>Max</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>precio_unitario</td>
+<td>5.000</td>
+<td>455.950,16</td>
+<td>445.808,47</td>
+<td>75.900,00</td>
+<td>142.400,00</td>
+<td>289.900,00</td>
+<td>685.900,00</td>
+<td>2.309.900,00</td>
+</tr>
+<tr>
+<td>valor_bruto</td>
+<td>5.000</td>
+<td>668.288,12</td>
+<td>828.903,83</td>
+<td>75.900,00</td>
+<td>188.800,00</td>
+<td>391.800,00</td>
+<td>807.400,00</td>
+<td>8.799.600,00</td>
+</tr>
+<tr>
+<td>valor_descuento</td>
+<td>5.000</td>
+<td>34.593,10</td>
+<td>79.018,31</td>
+<td>0,00</td>
+<td>0,00</td>
+<td>5.495,00</td>
+<td>35.970,00</td>
+<td>1.671.920,00</td>
+</tr>
+<tr>
+<td>valor_neto</td>
+<td>5.000</td>
+<td>633.695,02</td>
+<td>788.075,29</td>
+<td>63.920,00</td>
+<td>176.310,00</td>
+<td>367.110,00</td>
+<td>764.915,00</td>
+<td>8.799.600,00</td>
+</tr>
+</tbody>
+</table>
+<h4><code>df_ventas</code>: distribución de <code>calificacion_cliente</code> (2.828 registros con información)</h4>
+<table>
+<thead>
+<tr>
+<th>calificacion</th>
+<th>registros</th>
+<th>%</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>5</td>
+<td>1.198</td>
+<td>42,4%</td>
+</tr>
+<tr>
+<td>4</td>
+<td>1.015</td>
+<td>35,9%</td>
+</tr>
+<tr>
+<td>3</td>
+<td>386</td>
+<td>13,6%</td>
+</tr>
+<tr>
+<td>2</td>
+<td>143</td>
+<td>5,1%</td>
+</tr>
+<tr>
+<td>1</td>
+<td>86</td>
+<td>3,0%</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="Distribución de calificaciones" src="img/dist_calificacion.png" /></p>
+<h4><code>df_logistica</code>: eventos por <code>estado_evento</code></h4>
+<table>
+<thead>
+<tr>
+<th>estado_evento</th>
+<th>registros</th>
+<th>%</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Listo para despacho</td>
+<td>5.006</td>
+<td>10,0%</td>
+</tr>
+<tr>
+<td>Despachado</td>
+<td>5.005</td>
+<td>10,0%</td>
+</tr>
+<tr>
+<td>Orden enviada a logística</td>
+<td>5.004</td>
+<td>10,0%</td>
+</tr>
+<tr>
+<td>En alistamiento</td>
+<td>5.001</td>
+<td>10,0%</td>
+</tr>
+<tr>
+<td>Pedido recibido</td>
+<td>5.000</td>
+<td>10,0%</td>
+</tr>
+<tr>
+<td>Pago aprobado</td>
+<td>4.999</td>
+<td>10,0%</td>
+</tr>
+<tr>
+<td>Empacado</td>
+<td>4.998</td>
+<td>10,0%</td>
+</tr>
+<tr>
+<td>En tránsito</td>
+<td>4.998</td>
+<td>10,0%</td>
+</tr>
+<tr>
+<td>Entregado</td>
+<td>4.998</td>
+<td>10,0%</td>
+</tr>
+<tr>
+<td>En ruta de entrega</td>
+<td>4.991</td>
+<td>10,0%</td>
+</tr>
+</tbody>
+</table>
+<h4><code>df_logistica</code>: eventos por <code>ciudad_destino</code></h4>
+<table>
+<thead>
+<tr>
+<th>ciudad_destino</th>
+<th>registros</th>
+<th>%</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Bogotá D.C.</td>
+<td>16.510</td>
+<td>33,0%</td>
+</tr>
+<tr>
+<td>Cali</td>
+<td>9.412</td>
+<td>18,8%</td>
+</tr>
+<tr>
+<td>Medellín</td>
+<td>9.186</td>
+<td>18,4%</td>
+</tr>
+<tr>
+<td>Barranquilla</td>
+<td>5.331</td>
+<td>10,7%</td>
+</tr>
+<tr>
+<td>Bucaramanga</td>
+<td>5.128</td>
+<td>10,3%</td>
+</tr>
+<tr>
+<td>Pereira</td>
+<td>4.388</td>
+<td>8,8%</td>
+</tr>
+</tbody>
+</table>
+<h4><code>df_logistica</code>: frecuencia de transportadoras (eventos)</h4>
+<table>
+<thead>
+<tr>
+<th>transportadora</th>
+<th>registros</th>
+<th>%</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Envia</td>
+<td>4.216</td>
+<td>21,2%</td>
+</tr>
+<tr>
+<td>Coordinadora</td>
+<td>4.097</td>
+<td>20,6%</td>
+</tr>
+<tr>
+<td>Inter Rapidísimo</td>
+<td>4.008</td>
+<td>20,1%</td>
+</tr>
+<tr>
+<td>TCC</td>
+<td>3.810</td>
+<td>19,1%</td>
+</tr>
+<tr>
+<td>Servientrega</td>
+<td>3.781</td>
+<td>19,0%</td>
+</tr>
+</tbody>
+</table>
+<h4><code>df_logistica</code>: frecuencia de incidencias</h4>
+<table>
+<thead>
+<tr>
+<th>incidencia</th>
+<th>registros</th>
+<th>%</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Error de clasificación</td>
+<td>98</td>
+<td>19,2%</td>
+</tr>
+<tr>
+<td>Cliente ausente</td>
+<td>91</td>
+<td>17,8%</td>
+</tr>
+<tr>
+<td>Novedad climática</td>
+<td>91</td>
+<td>17,8%</td>
+</tr>
+<tr>
+<td>Retraso por tráfico</td>
+<td>81</td>
+<td>15,9%</td>
+</tr>
+<tr>
+<td>Paquete reprogramado</td>
+<td>76</td>
+<td>14,9%</td>
+</tr>
+<tr>
+<td>Dirección incompleta</td>
+<td>74</td>
+<td>14,5%</td>
+</tr>
+</tbody>
+</table>
+<h4><code>df_logistica</code>: resumen de <code>tiempo_etapa_horas</code> y <code>costo_envio</code></h4>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Count</th>
+<th>Media</th>
+<th>Std</th>
+<th>Min</th>
+<th>P25</th>
+<th>Mediana</th>
+<th>P75</th>
+<th>Max</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>tiempo_etapa_horas</td>
+<td>45.000</td>
+<td>4,00</td>
+<td>3,46</td>
+<td>0,08</td>
+<td>1,25</td>
+<td>3,05</td>
+<td>5,89</td>
+<td>24,69</td>
+</tr>
+<tr>
+<td>costo_envio</td>
+<td>50.000</td>
+<td>13.609,49</td>
+<td>3.607,86</td>
+<td>8.900,00</td>
+<td>9.900,00</td>
+<td>13.900,00</td>
+<td>15.900,00</td>
+<td>20.790,00</td>
+</tr>
+</tbody>
+</table>
+<h2>4. Preguntas de negocio (datos originales)</h2>
+<p><strong>1. ¿Cuál es el canal con mayor venta neta acumulada?</strong></p>
+<p>Página web, con $1.286.922.005 (40,6% del total).</p>
+<table>
+<thead>
+<tr>
+<th>canal</th>
+<th>valor_neto</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Página web</td>
+<td>1.286.922.005</td>
+</tr>
+<tr>
+<td>Tienda física</td>
+<td>955.272.420</td>
+</tr>
+<tr>
+<td>Aplicación móvil</td>
+<td>926.280.655</td>
+</tr>
+</tbody>
+</table>
+<p><strong>2. ¿Cuál es la categoría con mayor número de productos vendidos en Bogotá D.C.?</strong></p>
+<p>Tecnología, con 650 unidades. Sin embargo, en valor neto lidera Deportes ($273.790.785): vende menos unidades, pero más caras.</p>
+<table>
+<thead>
+<tr>
+<th>categoria</th>
+<th>unidades</th>
+<th>valor_neto</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Deportes</td>
+<td>379</td>
+<td>273.790.785</td>
+</tr>
+<tr>
+<td>Electrodomésticos</td>
+<td>507</td>
+<td>145.291.150</td>
+</tr>
+<tr>
+<td>Hogar</td>
+<td>437</td>
+<td>157.488.760</td>
+</tr>
+<tr>
+<td>Oficina</td>
+<td>385</td>
+<td>216.705.250</td>
+</tr>
+<tr>
+<td>Tecnología</td>
+<td>650</td>
+<td>240.385.895</td>
+</tr>
+</tbody>
+</table>
+<p><strong>3. ¿Qué tan recurrentes son los clientes?</strong></p>
+<p>De 2.292 clientes, 1.458 (63,6%) compraron más de una vez y generan el 83,3% de las ventas. El cliente más frecuente compró 9 veces.</p>
+<table>
+<thead>
+<tr>
+<th>compras_por_cliente</th>
+<th>clientes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>834</td>
+</tr>
+<tr>
+<td>2</td>
+<td>696</td>
+</tr>
+<tr>
+<td>3</td>
+<td>437</td>
+</tr>
+<tr>
+<td>4</td>
+<td>211</td>
+</tr>
+<tr>
+<td>5</td>
+<td>81</td>
+</tr>
+<tr>
+<td>6</td>
+<td>22</td>
+</tr>
+<tr>
+<td>7</td>
+<td>7</td>
+</tr>
+<tr>
+<td>8</td>
+<td>3</td>
+</tr>
+<tr>
+<td>9</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<p><strong>4. ¿Qué porcentaje representa el valor_descuento frente al valor_bruto?</strong></p>
+<p>5,18% del valor bruto total; el 51,3% de las ventas tuvo algún descuento.</p>
+<p><strong>5. ¿Cuál es el tiempo medio por etapa logística según la transportadora?</strong></p>
+<p>Entre 6,45 h (Servientrega) y 6,58 h (Inter Rapidísimo): no hay diferencias relevantes. Solo incluye etapas de transporte; el promedio de todas las etapas es 4,00 h.</p>
+<table>
+<thead>
+<tr>
+<th>transportadora</th>
+<th>tiempo_etapa_horas</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Servientrega</td>
+<td>6,45</td>
+</tr>
+<tr>
+<td>Coordinadora</td>
+<td>6,46</td>
+</tr>
+<tr>
+<td>TCC</td>
+<td>6,46</td>
+</tr>
+<tr>
+<td>Envia</td>
+<td>6,47</td>
+</tr>
+<tr>
+<td>Inter Rapidísimo</td>
+<td>6,58</td>
+</tr>
+</tbody>
+</table>
+<p><strong>6. ¿Qué producto genera el mayor valor neto y cuánto pesa en su categoría?</strong></p>
+<p>Banda caminadora (Deportes), con $442.828.885, frente a $296.333.820 del segundo (Bicicleta estática). Aporta el 51,3% del valor neto de Deportes, y explica por qué esa categoría lidera en valor aunque no en número de transacciones.</p>
+<table>
+<thead>
+<tr>
+<th>producto</th>
+<th>categoria</th>
+<th>valor_neto</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Banda caminadora</td>
+<td>Deportes</td>
+<td>442.828.885</td>
+</tr>
+<tr>
+<td>Bicicleta estática</td>
+<td>Deportes</td>
+<td>296.333.820</td>
+</tr>
+<tr>
+<td>Tablet 10 pulgadas</td>
+<td>Tecnología</td>
+<td>278.582.910</td>
+</tr>
+<tr>
+<td>Monitor 24 pulgadas</td>
+<td>Tecnología</td>
+<td>231.554.560</td>
+</tr>
+<tr>
+<td>Escritorio ajustable</td>
+<td>Oficina</td>
+<td>192.232.905</td>
+</tr>
+</tbody>
+</table>
+<p><strong>7. ¿El costo de envío depende de la ciudad destino, la categoría o el tamaño del pedido?</strong></p>
+<p>No. Las 12 tarifas aparecen en todas las ciudades, el costo promedio por ciudad varía entre $13.440 y $13.773, y por categoría entre $13.483 y $13.767. La correlación con la cantidad es -0,005 y con el valor neto 0,003. La tarifa no refleja el destino ni el pedido.</p>
+<table>
+<thead>
+<tr>
+<th>ciudad_destino</th>
+<th>costo_promedio</th>
+<th>tarifas_distintas</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Barranquilla</td>
+<td>13.440</td>
+<td>12</td>
+</tr>
+<tr>
+<td>Bogotá D.C.</td>
+<td>13.667</td>
+<td>12</td>
+</tr>
+<tr>
+<td>Bucaramanga</td>
+<td>13.477</td>
+<td>12</td>
+</tr>
+<tr>
+<td>Cali</td>
+<td>13.773</td>
+<td>12</td>
+</tr>
+<tr>
+<td>Medellín</td>
+<td>13.485</td>
+<td>12</td>
+</tr>
+<tr>
+<td>Pereira</td>
+<td>13.681</td>
+<td>12</td>
+</tr>
+</tbody>
+</table>
+<p><strong>8. ¿Qué porcentaje de los eventos presenta una incidencia registrada?</strong></p>
+<p>1,02% de los eventos (511), que afectan a 511 pedidos (10,2%).</p>
+<p><strong>9. ¿Cómo se relaciona el medio de pago con el canal de venta?</strong></p>
+<p>Hay medios exclusivos de un canal: Billetera digital solo en Aplicación móvil; Efectivo solo en Tienda física; Transferencia solo en Página web. PSE, Tarjeta crédito, Tarjeta débito se usan en más de un canal. La combinación es coherente con el negocio: no hay pagos en efectivo en canales digitales.</p>
+<table>
+<thead>
+<tr>
+<th>medio_pago</th>
+<th>Aplicación móvil</th>
+<th>Página web</th>
+<th>Tienda física</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Billetera digital</td>
+<td>230</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Efectivo</td>
+<td>0</td>
+<td>0</td>
+<td>421</td>
+</tr>
+<tr>
+<td>PSE</td>
+<td>432</td>
+<td>657</td>
+<td>138</td>
+</tr>
+<tr>
+<td>Tarjeta crédito</td>
+<td>553</td>
+<td>833</td>
+<td>502</td>
+</tr>
+<tr>
+<td>Tarjeta débito</td>
+<td>266</td>
+<td>385</td>
+<td>438</td>
+</tr>
+<tr>
+<td>Transferencia</td>
+<td>0</td>
+<td>145</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<p><strong>10. ¿Cuál es el valor neto promedio por transacción en cada ciudad?</strong></p>
+<p>Mayor en Bucaramanga ($678.115) y menor en Pereira ($559.717).</p>
+<table>
+<thead>
+<tr>
+<th>ciudad</th>
+<th>valor_neto</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Bucaramanga</td>
+<td>678.115</td>
+</tr>
+<tr>
+<td>Cali</td>
+<td>654.120</td>
+</tr>
+<tr>
+<td>Medellín</td>
+<td>639.395</td>
+</tr>
+<tr>
+<td>Barranquilla</td>
+<td>631.910</td>
+</tr>
+<tr>
+<td>Bogotá D.C.</td>
+<td>625.325</td>
+</tr>
+<tr>
+<td>Pereira</td>
+<td>559.717</td>
+</tr>
+</tbody>
+</table>
+<h2>5. Transformación de datos (Medallion)</h2>
+<table>
+<thead>
+<tr>
+<th>Capa</th>
+<th>Contenido</th>
+<th>Archivos</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Bronze</td>
+<td>Copia exacta de las fuentes: última carga y un histórico por ejecución con el <code>.xlsx</code> original sin tocar</td>
+<td><code>ventas_bronze.parquet</code> (5.000 × 17), <code>logistica_bronze.parquet</code> (50.000 × 14), <code>historico/</code> (1 carga)</td>
+</tr>
+<tr>
+<td>Silver</td>
+<td>Se construye <strong>leyendo Bronze</strong>. Datos depurados por fuente, registro de incidencias y cuarentena</td>
+<td><code>df_ventas_transformado.parquet</code> (5.000 × 17), <code>df_logistica_transformado.parquet</code> (49.900 × 13), <code>incidencias_calidad.parquet</code> (601), <code>rechazados/</code> (0)</td>
+</tr>
+<tr>
+<td>Gold</td>
+<td>Integración por <code>pedido_id</code> y tablas agregadas listas para consumo</td>
+<td><code>ventas_logistica_gold.parquet</code> (1 fila por pedido, 5.000 × 38), <code>eventos_gold.parquet</code> (1 fila por evento, 49.900 × 25), <code>kpi_mensual</code>, <code>desempeno_transportadora</code>, <code>ventas_ciudad_canal</code></td>
+</tr>
+</tbody>
+</table>
+<h3>5.1 Duplicados</h3>
+<ul>
+<li>Se eliminaron 99 filas idénticas en logística. En ventas no había duplicados.</li>
+<li>Se resolvió 1 <code>evento_id</code> repetido con contenido distinto conservando la fila con menos nulos (las dos versiones solo difieren en <code>centro_logistico</code> para el evento 35782).</li>
+<li>Resultado: <code>evento_id</code> es único en Silver (49.900 valores para 49.900 filas).</li>
+</ul>
+<h3>5.2 Tratamiento de nulos (cada decisión es explícita, no automática)</h3>
+<h4>Logística</h4>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Nulos Bronze</th>
+<th>Estrategia</th>
+<th>Justificación</th>
+<th>Nulos Silver</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>fecha_evento</td>
+<td>65</td>
+<td>Se mantiene nulo</td>
+<td>No se puede deducir la hora real de un evento; imputarla alteraría tiempos y retrasos.</td>
+<td>65</td>
+</tr>
+<tr>
+<td>centro_logistico</td>
+<td>90</td>
+<td>Valor del mismo pedido</td>
+<td>Es constante dentro del pedido (1 valor por pedido), así que se recupera el valor real. Es más exacto que la moda.</td>
+<td>0</td>
+</tr>
+<tr>
+<td>ciudad_destino</td>
+<td>45</td>
+<td>Valor del mismo pedido</td>
+<td>Es constante dentro del pedido y coincide con la ciudad de la venta.</td>
+<td>0</td>
+</tr>
+<tr>
+<td>transportadora</td>
+<td>30.088</td>
+<td>Valor del mismo pedido, solo en estados de transporte</td>
+<td>Antes del despacho el nulo es válido y se mantiene. En Despachado, En tránsito, En ruta de entrega, Entregado se completa con la transportadora del pedido (cada pedido tiene una sola).</td>
+<td>29.944</td>
+</tr>
+<tr>
+<td>numero_guia</td>
+<td>30.068</td>
+<td>Valor del mismo pedido, solo en estados de transporte</td>
+<td>Igual que <code>transportadora</code>: cada pedido tiene una sola guía.</td>
+<td>29.944</td>
+</tr>
+<tr>
+<td>fecha_prometida_entrega</td>
+<td>55</td>
+<td>Valor del mismo pedido</td>
+<td>Es constante dentro del pedido, así que se recupera el valor real.</td>
+<td>0</td>
+</tr>
+<tr>
+<td>tiempo_etapa_horas</td>
+<td>5.000</td>
+<td>Se mantiene nulo</td>
+<td>Todos los nulos están en <code>Pedido recibido</code>, el primer evento, que no tiene etapa previa. Imputar media o mediana inventaría una duración que no existe.</td>
+<td>4.991</td>
+</tr>
+<tr>
+<td>incidencia</td>
+<td>49.489</td>
+<td>Categoría <code>Sin incidencia</code></td>
+<td>El nulo significa que no hubo novedad; se hace explícito (equivale a "NO INFORMADO").</td>
+<td>0</td>
+</tr>
+<tr>
+<td>observacion</td>
+<td>48.277</td>
+<td>Categoría <code>Sin observación</code></td>
+<td>El nulo significa que no se anotó nada; se hace explícito.</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Unnamed: 13</td>
+<td>49.999</td>
+<td>Eliminar columna</td>
+<td>Columna residual del Excel (una sola celda con la fórmula <code>=AI("")</code>).</td>
+<td>eliminada</td>
+</tr>
+</tbody>
+</table>
+<p>En estados de transporte, <code>transportadora</code> pasó de 80 a 0 nulos y <code>numero_guia</code> de 60 a 0. Los nulos que quedan son todos de eventos anteriores al despacho, donde son válidos.</p>
+<h4>Ventas</h4>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Nulos Bronze</th>
+<th>Estrategia</th>
+<th>Justificación</th>
+<th>Nulos Silver</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id_tienda</td>
+<td>3.501</td>
+<td>Se mantiene nulo</td>
+<td>Solo aplica al canal Tienda física; en web y app no existe tienda.</td>
+<td>3.501</td>
+</tr>
+<tr>
+<td>calificacion_cliente</td>
+<td>2.172</td>
+<td>Se mantiene nulo (tipo Int64)</td>
+<td>El cliente no calificó. Imputar moda (5) o media inflaría o distorsionaría la satisfacción.</td>
+<td>2.172</td>
+</tr>
+</tbody>
+</table>
+<p>No se usó media ni mediana porque ninguna variable numérica tiene nulos que sean errores. Los únicos nulos numéricos (<code>tiempo_etapa_horas</code> y <code>calificacion_cliente</code>) tienen un significado válido. Tampoco se usó la moda para las categóricas: el valor real se podía recuperar del mismo pedido, y eso es más exacto.</p>
+<h3>5.3 Tipos y estandarización</h3>
+<ul>
+<li><code>fecha_evento</code> y <code>fecha_prometida_entrega</code> pasan de texto a <code>datetime</code>; <code>fecha_venta</code> ya era <code>datetime</code>.</li>
+<li><code>calificacion_cliente</code> pasa de <code>float64</code> a <code>Int64</code> (entero que admite nulos).</li>
+<li>En las variables de texto se eliminaron espacios al inicio y al final y se colapsaron los espacios repetidos (0 valores cambiaron). Al validar contra la cobertura de <code>config.yaml</code> (Bogotá D.C., Cali, Medellín, Barranquilla, Bucaramanga, Pereira), todas las ciudades están dentro de la cobertura, y no hay variantes de escritura de una misma categoría (mayúsculas, tildes o espacios), así que no fue necesario recodificar.</li>
+<li>Se eliminó la columna residual <code>Unnamed: 13</code>.</li>
+</ul>
+<h3>5.4 Capa Gold</h3>
+<p><code>ventas_logistica_gold</code> agrega una fila por pedido con la venta y su resumen logístico: número de eventos y estados, estado final, transportadora, costo de envío (una vez por pedido), tiempo total, incidencias, fecha de entrega, <code>dias_retraso</code>, <code>entregado_tarde</code>, <code>trazabilidad_completa</code>, <code>guia_compartida</code>, <code>entregado</code>, <code>dias_ciclo_entrega</code> (de la venta a la entrega), <code>dias_prometidos</code> (de la venta a la fecha prometida) y <code>mes_venta</code>.</p>
+<p><code>eventos_gold</code> (49.900 × 25) tiene una fila por evento con los datos descriptivos de la venta, <strong>sin los montos de la venta</strong> (<code>precio_unitario</code>, <code>valor_bruto</code>, <code>valor_descuento</code>, <code>valor_neto</code>): repetidos en cada evento, una suma multiplicaría las ventas ~10 veces. <code>costo_envio</code> sí está, porque es dato logístico, pero se repite en cada evento del pedido y no debe sumarse ahí. Los montos y el costo por pedido se analizan en <code>ventas_logistica_gold</code>.</p>
+<ul>
+<li><strong>Entregas tardías:</strong> 16,9% de los pedidos entregados (842 de 4.984) llegaron después de la fecha prometida, con un retraso promedio de 0,43 días entre los tardíos. El promedio global es -0,35 días (negativo = entrega anticipada) y el retraso máximo es 1,50 días.</li>
+<li><strong>Pedidos sin fecha de entrega:</strong> 16. De ellos, 10 no tienen el evento <code>Entregado</code> y 6 lo tienen pero sin fecha.</li>
+<li><strong>Trazabilidad incompleta:</strong> 98 pedidos no pasan por los 10 estados (9 no registran <code>Pedido recibido</code>).</li>
+<li><strong>Pedidos entregados:</strong> 4.990 de 5.000.</li>
+<li><strong>Tiempo de ciclo:</strong> de la venta a la entrega pasan 1,45 días (mediana), frente a 1,92 días prometidos. Los pedidos que llegan tarde se retrasan en promedio 0,43 días.</li>
+</ul>
+<p>Las tablas siguientes se leen directamente de las tablas agregadas de Gold. Están listas para Excel o Power BI, sin tener que recalcularlas.</p>
+<h4><code>gold/desempeno_transportadora</code></h4>
+<table>
+<thead>
+<tr>
+<th>transportadora</th>
+<th>pedidos</th>
+<th>pct_entregas_tardias</th>
+<th>retraso_promedio_tardias</th>
+<th>ciclo_mediano_dias</th>
+<th>tiempo_total_mediano_horas</th>
+<th>costo_envio_promedio</th>
+<th>pct_pedidos_con_incidencia</th>
+<th>calificacion_promedio</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TCC</td>
+<td>957</td>
+<td>17,8%</td>
+<td>0,43</td>
+<td>1,44</td>
+<td>34,50</td>
+<td>13.589</td>
+<td>10,4%</td>
+<td>4,08</td>
+</tr>
+<tr>
+<td>Inter Rapidísimo</td>
+<td>1.007</td>
+<td>17,3%</td>
+<td>0,47</td>
+<td>1,46</td>
+<td>34,82</td>
+<td>13.721</td>
+<td>10,2%</td>
+<td>4,10</td>
+</tr>
+<tr>
+<td>Servientrega</td>
+<td>950</td>
+<td>16,7%</td>
+<td>0,42</td>
+<td>1,44</td>
+<td>34,46</td>
+<td>13.531</td>
+<td>10,2%</td>
+<td>4,03</td>
+</tr>
+<tr>
+<td>Envia</td>
+<td>1.059</td>
+<td>16,4%</td>
+<td>0,42</td>
+<td>1,46</td>
+<td>34,86</td>
+<td>13.509</td>
+<td>10,5%</td>
+<td>4,12</td>
+</tr>
+<tr>
+<td>Coordinadora</td>
+<td>1.027</td>
+<td>16,4%</td>
+<td>0,43</td>
+<td>1,45</td>
+<td>34,54</td>
+<td>13.701</td>
+<td>9,7%</td>
+<td>4,13</td>
+</tr>
+</tbody>
+</table>
+<h4><code>gold/kpi_mensual</code></h4>
+<table>
+<thead>
+<tr>
+<th>mes_venta</th>
+<th>pedidos</th>
+<th>clientes</th>
+<th>valor_neto</th>
+<th>ticket_promedio</th>
+<th>pct_entregas_tardias</th>
+<th>ciclo_mediano_dias</th>
+<th>pct_pedidos_con_incidencia</th>
+<th>calificacion_promedio</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2026-01</td>
+<td>830</td>
+<td>714</td>
+<td>533.719.660</td>
+<td>643.036</td>
+<td>17,3%</td>
+<td>1,48</td>
+<td>11,2%</td>
+<td>4,10</td>
+</tr>
+<tr>
+<td>2026-02</td>
+<td>764</td>
+<td>673</td>
+<td>441.439.530</td>
+<td>577.800</td>
+<td>17,6%</td>
+<td>1,42</td>
+<td>9,2%</td>
+<td>4,04</td>
+</tr>
+<tr>
+<td>2026-03</td>
+<td>867</td>
+<td>732</td>
+<td>536.555.540</td>
+<td>618.865</td>
+<td>17,6%</td>
+<td>1,44</td>
+<td>9,1%</td>
+<td>4,12</td>
+</tr>
+<tr>
+<td>2026-04</td>
+<td>851</td>
+<td>724</td>
+<td>543.987.720</td>
+<td>639.234</td>
+<td>16,7%</td>
+<td>1,45</td>
+<td>10,7%</td>
+<td>4,14</td>
+</tr>
+<tr>
+<td>2026-05</td>
+<td>821</td>
+<td>710</td>
+<td>524.728.000</td>
+<td>639.133</td>
+<td>16,3%</td>
+<td>1,44</td>
+<td>9,6%</td>
+<td>4,08</td>
+</tr>
+<tr>
+<td>2026-06</td>
+<td>867</td>
+<td>729</td>
+<td>588.044.630</td>
+<td>678.252</td>
+<td>16,0%</td>
+<td>1,44</td>
+<td>11,4%</td>
+<td>4,08</td>
+</tr>
+</tbody>
+</table>
+<p>La tasa de entregas tardías pasa de 17,3% en 2026-01 a 16,0% en 2026-06. El mes de mayor valor neto es 2026-06.</p>
+<h4><code>gold/ventas_ciudad_canal</code> (las 6 combinaciones de mayor valor)</h4>
+<table>
+<thead>
+<tr>
+<th>ciudad</th>
+<th>canal</th>
+<th>pedidos</th>
+<th>unidades</th>
+<th>valor_neto</th>
+<th>ticket_promedio</th>
+<th>pct_entregas_tardias</th>
+<th>pct_valor_neto_total</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Bogotá D.C.</td>
+<td>Página web</td>
+<td>674</td>
+<td>962</td>
+<td>425.646.450</td>
+<td>631.523</td>
+<td>16,1%</td>
+<td>13,4%</td>
+</tr>
+<tr>
+<td>Bogotá D.C.</td>
+<td>Tienda física</td>
+<td>497</td>
+<td>735</td>
+<td>311.320.580</td>
+<td>626.400</td>
+<td>16,5%</td>
+<td>9,8%</td>
+</tr>
+<tr>
+<td>Bogotá D.C.</td>
+<td>Aplicación móvil</td>
+<td>482</td>
+<td>661</td>
+<td>296.694.810</td>
+<td>615.549</td>
+<td>16,7%</td>
+<td>9,4%</td>
+</tr>
+<tr>
+<td>Cali</td>
+<td>Página web</td>
+<td>408</td>
+<td>581</td>
+<td>258.843.035</td>
+<td>634.419</td>
+<td>16,0%</td>
+<td>8,2%</td>
+</tr>
+<tr>
+<td>Medellín</td>
+<td>Página web</td>
+<td>365</td>
+<td>538</td>
+<td>243.556.060</td>
+<td>667.277</td>
+<td>19,0%</td>
+<td>7,7%</td>
+</tr>
+<tr>
+<td>Medellín</td>
+<td>Aplicación móvil</td>
+<td>297</td>
+<td>437</td>
+<td>188.696.895</td>
+<td>635.343</td>
+<td>17,5%</td>
+<td>6,0%</td>
+</tr>
+</tbody>
+</table>
+<h3>5.5 Validaciones de calidad</h3>
+<p>Antes de guardar Silver y Gold, el pipeline verifica estas reglas (<a href="../src/transform/validaciones.py">validaciones.py</a>). Si alguna falla, se detiene y no publica datos incorrectos. Resultado sobre los datos publicados: <strong>33 de 33 reglas cumplidas</strong>.</p>
+<table>
+<thead>
+<tr>
+<th>Capa</th>
+<th>Regla</th>
+<th>Cumple</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Silver ventas</td>
+<td>id_venta único</td>
+<td>Sí</td>
+<td>0 repetidos</td>
+</tr>
+<tr>
+<td>Silver ventas</td>
+<td>pedido_id único</td>
+<td>Sí</td>
+<td>0 repetidos</td>
+</tr>
+<tr>
+<td>Silver ventas</td>
+<td>fecha_venta es datetime y sin nulos</td>
+<td>Sí</td>
+<td>0 nulos</td>
+</tr>
+<tr>
+<td>Silver ventas</td>
+<td>calificacion_cliente entre 1 y 5 (o nula)</td>
+<td>Sí</td>
+<td>0 fuera de rango</td>
+</tr>
+<tr>
+<td>Silver ventas</td>
+<td>Montos no negativos</td>
+<td>Sí</td>
+<td>0 negativos</td>
+</tr>
+<tr>
+<td>Silver ventas</td>
+<td>Ciudades dentro de la cobertura</td>
+<td>Sí</td>
+<td>todas</td>
+</tr>
+<tr>
+<td>Silver logística</td>
+<td>evento_id único</td>
+<td>Sí</td>
+<td>0 repetidos</td>
+</tr>
+<tr>
+<td>Silver logística</td>
+<td>Sin filas duplicadas</td>
+<td>Sí</td>
+<td>0 duplicadas</td>
+</tr>
+<tr>
+<td>Silver logística</td>
+<td>Sin columnas residuales del Excel</td>
+<td>Sí</td>
+<td></td>
+</tr>
+<tr>
+<td>Silver logística</td>
+<td>Fechas con tipo datetime</td>
+<td>Sí</td>
+<td></td>
+</tr>
+<tr>
+<td>Silver logística</td>
+<td>centro_logistico sin nulos</td>
+<td>Sí</td>
+<td>0 nulos</td>
+</tr>
+<tr>
+<td>Silver logística</td>
+<td>ciudad_destino sin nulos</td>
+<td>Sí</td>
+<td>0 nulos</td>
+</tr>
+<tr>
+<td>Silver logística</td>
+<td>fecha_prometida_entrega sin nulos</td>
+<td>Sí</td>
+<td>0 nulos</td>
+</tr>
+<tr>
+<td>Silver logística</td>
+<td>transportadora con valor en estados de transporte</td>
+<td>Sí</td>
+<td>0 nulos</td>
+</tr>
+<tr>
+<td>Silver logística</td>
+<td>transportadora sin valor antes del despacho</td>
+<td>Sí</td>
+<td>0 con valor</td>
+</tr>
+<tr>
+<td>Silver logística</td>
+<td>numero_guia con valor en estados de transporte</td>
+<td>Sí</td>
+<td>0 nulos</td>
+</tr>
+<tr>
+<td>Silver logística</td>
+<td>numero_guia sin valor antes del despacho</td>
+<td>Sí</td>
+<td>0 con valor</td>
+</tr>
+<tr>
+<td>Silver logística</td>
+<td>Ciudades destino dentro de la cobertura</td>
+<td>Sí</td>
+<td>todas</td>
+</tr>
+<tr>
+<td>Silver logística</td>
+<td>Todo pedido logístico existe en ventas</td>
+<td>Sí</td>
+<td>0 eventos huérfanos</td>
+</tr>
+<tr>
+<td>Silver ventas</td>
+<td>Registros en cuarentena ≤ 5%</td>
+<td>Sí</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Silver logística</td>
+<td>Registros en cuarentena ≤ 5%</td>
+<td>Sí</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Gold pedidos</td>
+<td>Una fila por venta</td>
+<td>Sí</td>
+<td>5.000 de 5.000</td>
+</tr>
+<tr>
+<td>Gold pedidos</td>
+<td>pedido_id único</td>
+<td>Sí</td>
+<td></td>
+</tr>
+<tr>
+<td>Gold pedidos</td>
+<td>valor_neto total igual al de Silver (sin duplicar)</td>
+<td>Sí</td>
+<td>diferencia 0</td>
+</tr>
+<tr>
+<td>Gold pedidos</td>
+<td>Todo pedido tiene resumen logístico</td>
+<td>Sí</td>
+<td>0 sin eventos</td>
+</tr>
+<tr>
+<td>Gold pedidos</td>
+<td>costo_envio sin nulos</td>
+<td>Sí</td>
+<td></td>
+</tr>
+<tr>
+<td>Gold eventos</td>
+<td>Una fila por evento de Silver</td>
+<td>Sí</td>
+<td>49.900 de 49.900</td>
+</tr>
+<tr>
+<td>Gold eventos</td>
+<td>Sin montos de la venta repetidos</td>
+<td>Sí</td>
+<td></td>
+</tr>
+<tr>
+<td>Gold kpi_mensual</td>
+<td>Suma de pedidos igual a Gold pedidos</td>
+<td>Sí</td>
+<td>5.000 de 5.000</td>
+</tr>
+<tr>
+<td>Gold kpi_mensual</td>
+<td>Suma de valor_neto igual a Gold pedidos</td>
+<td>Sí</td>
+<td>diferencia 0</td>
+</tr>
+<tr>
+<td>Gold desempeno_transportadora</td>
+<td>Suma de pedidos igual a Gold pedidos</td>
+<td>Sí</td>
+<td>5.000 de 5.000</td>
+</tr>
+<tr>
+<td>Gold ventas_ciudad_canal</td>
+<td>Suma de pedidos igual a Gold pedidos</td>
+<td>Sí</td>
+<td>5.000 de 5.000</td>
+</tr>
+<tr>
+<td>Gold ventas_ciudad_canal</td>
+<td>Suma de valor_neto igual a Gold pedidos</td>
+<td>Sí</td>
+<td>diferencia 0</td>
+</tr>
+</tbody>
+</table>
+<p>Además de las reglas por tabla, cada fila se revisa (fecha válida, ciudad en cobertura, montos coherentes, claves sin repetir, pedido existente). Las filas que no cumplen <strong>no detienen el pipeline</strong>: van a <code>silver/rechazados/</code> con el motivo, y se publica el resto. Solo si superan el 5% de una fuente se detiene todo.</p>
+<h3>5.6 Incidencias de calidad y cuarentena</h3>
+<p><code>silver/incidencias_calidad.parquet</code> registra cada problema detectado (601 registros) con su nivel (evento, pedido o columna), la clave afectada y la acción tomada. Es la lista que el negocio puede usar para corregir las fuentes.</p>
+<table>
+<thead>
+<tr>
+<th>nivel</th>
+<th>tipo</th>
+<th>accion</th>
+<th>registros</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>evento</td>
+<td>Fila duplicada</td>
+<td>Eliminada</td>
+<td>99</td>
+</tr>
+<tr>
+<td>pedido</td>
+<td>Trazabilidad incompleta</td>
+<td>Marcado en Gold</td>
+<td>98</td>
+</tr>
+<tr>
+<td>evento</td>
+<td>centro_logistico nulo</td>
+<td>Recuperado del mismo pedido</td>
+<td>89</td>
+</tr>
+<tr>
+<td>evento</td>
+<td>transportadora nulo en estado de transporte</td>
+<td>Completado con el valor del pedido</td>
+<td>80</td>
+</tr>
+<tr>
+<td>evento</td>
+<td>fecha_evento nula</td>
+<td>Se mantiene nulo (no recuperable)</td>
+<td>65</td>
+</tr>
+<tr>
+<td>evento</td>
+<td>numero_guia nulo en estado de transporte</td>
+<td>Completado con el valor del pedido</td>
+<td>60</td>
+</tr>
+<tr>
+<td>evento</td>
+<td>fecha_prometida_entrega nulo</td>
+<td>Recuperado del mismo pedido</td>
+<td>55</td>
+</tr>
+<tr>
+<td>evento</td>
+<td>ciudad_destino nulo</td>
+<td>Recuperado del mismo pedido</td>
+<td>45</td>
+</tr>
+<tr>
+<td>pedido</td>
+<td>Evento Entregado sin fecha</td>
+<td>Sin fecha de entrega en Gold</td>
+<td>6</td>
+</tr>
+<tr>
+<td>pedido</td>
+<td>numero_guia compartido entre pedidos</td>
+<td>Marcado en Gold</td>
+<td>2</td>
+</tr>
+<tr>
+<td>columna</td>
+<td>Columna residual del Excel</td>
+<td>Eliminada</td>
+<td>1</td>
+</tr>
+<tr>
+<td>evento</td>
+<td>evento_id repetido con contenido distinto</td>
+<td>Se conservó la versión más completa</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<p>Cuarentena en esta ejecución: 0 ventas y 0 eventos logísticos.</p>
+<h3>5.7 Trazabilidad (linaje)</h3>
+<p>Silver y Gold fueron generados por la ejecución <code>20261005_203025</code> (extracción) a partir de la carga de Bronze <code>20261005_203025</code>. El manifiesto <code>data/manifiestos/20261005_203025.json</code> registra las fuentes (incluida la huella SHA-256 del Excel: <code>98c55cd5af70ba33…</code>), las filas de cada archivo de cada capa y el resultado de las validaciones.</p>
+<h4>Últimas ejecuciones</h4>
+<table>
+<thead>
+<tr>
+<th>Ejecución</th>
+<th>Origen</th>
+<th>Carga Bronze</th>
+<th>Estado</th>
+<th>Duración (s)</th>
+<th>Reglas cumplidas</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>20261005_203025</td>
+<td>extracción</td>
+<td>20261005_203025</td>
+<td>OK</td>
+<td>4,6</td>
+<td>33 de 33</td>
+</tr>
+</tbody>
+</table>
+<h2>6. Automatización (Parte 8)</h2>
+<p><code>orchestrator.py</code> usa la librería <code>schedule</code> para ejecutar el pipeline completo (extracción de MySQL y Excel, y luego Bronze → Silver → Gold) apenas se inicia y después cada 1 hora, según <code>config.yaml</code>. Cada ejecución queda registrada en <code>logs/pipeline.log</code>: el resultado de cada validación y, si algo falla, la traza completa del error.</p>
+<p>Como el orquestador vuelve a extraer en cada ejecución, Bronze guarda además una copia de cada carga en <code>data/bronze/historico/AAAAMMDD_HHMMSS/</code> y conserva las últimas 48. Así se puede auditar qué llegó en cada ejecución.</p>
+<p>Como Silver se construye leyendo Bronze, cualquier carga del histórico se puede <strong>reprocesar sin volver a consultar MySQL ni el Excel</strong>. Por ejemplo, si cambia una regla de limpieza: <code>python reprocesar.py --carga AAAAMMDD_HHMMSS</code> reconstruye Silver y Gold, y deja su propio manifiesto.</p>
+<h2>7. Conclusiones</h2>
+<h3>Hallazgos sobre <code>df_ventas</code></h3>
+<ol>
+<li><strong>Estructura e integridad:</strong> 5.000 ventas y 17 variables, sin filas duplicadas. <code>id_venta</code> y <code>pedido_id</code> son únicos y todos los pedidos tienen eventos logísticos.</li>
+<li><strong>Nulos estructurales:</strong> <code>id_tienda</code> (70,02%) es nulo exactamente en las ventas que no son de tienda física. <code>calificacion_cliente</code> (43,44%) es opcional, y de quienes califican, el 78,3% da 4 o 5.</li>
+<li><strong>Consistencia aritmética:</strong> <code>valor_bruto = precio × cantidad</code>, <code>valor_descuento = bruto × descuento_pct</code> y <code>valor_neto = bruto − descuento</code> se cumplen en el 100,0% de los registros.</li>
+<li><strong>Concentración:</strong> Bogotá D.C., Cali, Medellín suman el 70,6% del valor neto, y Página web es el canal principal (40,4% de las transacciones).</li>
+<li><strong>Clientes recurrentes:</strong> 1.458 de 2.292 clientes (63,6%) compraron más de una vez y generan el 83,3% de las ventas.</li>
+<li><strong>Categoría y producto:</strong> Deportes lidera el valor neto con 27,3% del total, aunque Tecnología tiene más transacciones (1.366 frente a 812); lo explica <code>Banda caminadora</code>, que aporta el 51,3% del valor neto de Deportes.</li>
+<li><strong>Distribuciones:</strong> los montos tienen asimetría positiva (media de valor neto 633.695 frente a mediana 367.110). El 67,1% de las ventas es de 1 unidad y el 51,3% tiene descuento.</li>
+</ol>
+<h3>Hallazgos sobre <code>df_logistica</code></h3>
+<ol>
+<li><strong>Estructura:</strong> 50.000 eventos de 5.000 pedidos (~10 por pedido) y una columna residual <code>Unnamed: 13</code> con 1 celda con datos.</li>
+<li><strong>Tipos:</strong> <code>fecha_evento</code>, <code>fecha_prometida_entrega</code> vienen como texto y deben convertirse a fecha.</li>
+<li><strong>Duplicados:</strong> 99 filas idénticas y 100 <code>evento_id</code> repetidos, además de 1 número de guía compartido entre pedidos.</li>
+<li><strong>Nulos:</strong> <code>transportadora</code> y <code>numero_guia</code> (~60%) son nulos normales antes del despacho, pero 80 y 60 nulos en estados de transporte son errores. Los nulos de <code>centro_logistico</code>, <code>ciudad_destino</code>, <code>fecha_prometida_entrega</code> y <code>fecha_evento</code> (hasta 0,18%) son problemas de calidad.</li>
+<li><strong>Trazabilidad:</strong> 98 pedidos no tienen todos los estados (por ejemplo, 9 no registran <code>Pedido recibido</code>), por eso la frecuencia por estado no es exactamente 5.000. Las fechas sí son consistentes: ningún evento es anterior a la venta ni aparece fuera de orden.</li>
+<li><strong>Incidencias:</strong> afectan al 1,02% de los eventos (10,2% de los pedidos). La más frecuente es <code>Error de clasificación</code>.</li>
+<li><strong>Costos y tiempos:</strong> <code>costo_envio</code> es constante por pedido (12 tarifas) y <code>tiempo_etapa_horas</code> tiene una mediana de 3,05 h y un máximo de 24,69 h.</li>
+</ol>
+<h3>Hallazgos de la transformación</h3>
+<ol>
+<li>Logística pasó de 50.000 × 14 a 49.900 × 13: se eliminaron duplicados y la columna residual, y <code>evento_id</code> quedó único.</li>
+<li>Los nulos de datos del pedido (centro, ciudad destino y fecha prometida) pasaron de 190 a 0 al recuperarlos desde el mismo pedido, sin necesidad de moda ni media.</li>
+<li>Los nulos con significado (<code>id_tienda</code>, <code>calificacion_cliente</code>, <code>tiempo_etapa_horas</code> y <code>transportadora</code> antes del despacho) se conservaron, para no sesgar los indicadores.</li>
+<li>La integración en Gold es 1 a 1 por pedido (5.000 filas) y permite medir el cumplimiento: 16,9% de entregas tardías.</li>
+<li>Quedan problemas que no se pueden corregir con los datos disponibles y se dejan marcados: 6 pedidos con evento <code>Entregado</code> sin fecha, 98 pedidos con trazabilidad incompleta y 1 guía compartida.</li>
+<li><code>eventos_gold</code> se publica sin los montos de la venta, para evitar que se sumen ~10 veces por pedido.</li>
+<li>Las 33 reglas de calidad se verifican automáticamente en cada ejecución (33 cumplidas), y el tiempo de ciclo mediano (1,45 días) queda por debajo de lo prometido (1,92 días).</li>
+<li>Cada problema detectado queda documentado en <code>incidencias_calidad</code> (601 registros, 12 tipos). Las filas inválidas van a cuarentena sin detener el pipeline (en esta ejecución: 0).</li>
+<li>Silver y Gold se construyen leyendo Bronze, y cada ejecución deja un manifiesto con su linaje. Las 1 carga del histórico se pueden reprocesar sin volver a extraer de las fuentes.</li>
+</ol></body></html>

@@ -1,6 +1,6 @@
-import pandas as pd
-import yaml
 import os
+import pandas as pd
+from src.utils.config import cargar_config
 from src.utils.logger import setup_logger
 
 def extraer_logistica_excel(config_path="config/config.yaml"):
@@ -13,10 +13,7 @@ def extraer_logistica_excel(config_path="config/config.yaml"):
     logger = setup_logger(config_path)
     logger.info("Iniciando PARTE 2: Extracción desde Excel (Sistema Logístico)...")
     
-    with open(config_path, "r", encoding="utf-8") as f:
-        config = yaml.safe_load(f)
-        
-    excel_path = config["paths"]["excel_logistica"]
+    excel_path = cargar_config(config_path)["paths"]["excel_logistica"]
     
     if not os.path.exists(excel_path):
         logger.error(f"El archivo Excel no existe en la ruta: {excel_path}")

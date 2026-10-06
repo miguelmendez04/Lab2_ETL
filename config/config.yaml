@@ -1,13 +1,14 @@
-# Configuración de la base de datos
+# Autores del laboratorio
 autores:
-  - "Maicol Narvaez"
-  - "Miguel"
-  - "Karin"
-  - "Angie"
-  
+  - "Miguel Ángel Méndez Rodríguez"
+  - "Maicol Andrés Narváez Rincón"
+  - "Karin Stephany Parra Rosero"
+  - "Angie Tatiana Rodríguez Duque"
+
+# Configuración de la base de datos (las credenciales van en el archivo .env)
 database:
   table_ventas: "ventas"
-  
+
 # Configuración de rutas de archivos y medallion
 paths:
   excel_logistica: "data/kaismart_eventos_logisticos.xlsx"
@@ -15,14 +16,35 @@ paths:
   silver_dir: "data/silver"
   gold_dir: "data/gold"
   log_file: "logs/pipeline.log"
+  manifiestos_dir: "data/manifiestos"
 
-# Reglas e indicadores de negocio
+# Capa Bronze: además de la última carga, se guarda una copia de cada ejecución (Parquet + .xlsx original)
+bronze:
+  historico: true
+  max_cargas: 48        # cargas que se conservan (48 = 2 días con el orquestador cada hora)
 
+# Capa Silver: los registros que no cumplen una regla de fila van a cuarentena (silver/rechazados)
+# en vez de detener todo el pipeline. Si superan este porcentaje, el pipeline sí se detiene.
+silver:
+  max_pct_rechazados: 5
+
+# Reglas de negocio usadas en la capa Silver
 reglas:
-  Cobertura:
-    - "Bogotá"
+  # Ciudades donde opera Kaismart (se valida ciudad y ciudad_destino)
+  cobertura:
+    - "Bogotá D.C."
     - "Cali"
     - "Medellín"
     - "Barranquilla"
     - "Bucaramanga"
     - "Pereira"
+  # Estados en los que el pedido ya tiene transportadora y número de guía
+  estados_con_transporte:
+    - "Despachado"
+    - "En tránsito"
+    - "En ruta de entrega"
+    - "Entregado"
+
+# Frecuencia del orquestador (Parte 8)
+orquestador:
+  cada_horas: 1
